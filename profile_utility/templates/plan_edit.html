@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Plan</title>
+    <style>
+        .image-container {
+            position: relative;
+        }
+        .marker {
+            position: absolute;
+            background: red;
+            border-radius: 50%;
+            width: 10px;
+            height: 10px;
+            cursor: pointer;
+        }
+        .distance-input {
+            position: absolute;
+            background: white;
+            border: 1px solid #ccc;
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Edit Plan</h1>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Save</button>
+    </form>
+    <div class="image-container">
+        {% if plan.image %}
+            <img id="plan-image" src="{{ plan.image.url }}" alt="{{ plan.floor_or_name }}" style="width: 100%; height: auto;">
+        {% endif %}
+        {% for marker in plan.markers.all %}
+            <div class="marker" style="left: {{ marker.x }}px; top: {{ marker.y }}px;" data-id="{{ marker.id }}"></div>
+        {% endfor %}
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const image = document.getElementById('plan-image');
+            const form = document.querySelector('form');
+            let markers = [];
+
+            image.addEventListener('click', function (event) {
+                const rect = image.getBoundingClientRect();
+                const x = event.clientX - rect.left;
+                const y = event.clientY - rect.top;
+
+                // Add a marker to the image
+                let marker = document.createElement('div');
+                marker.classList.add('marker');
+                marker.style.left = `${x}px`;
+                marker.style.top = `${y}px`;
+                marker.dataset.id = markers.length;
+                marker.addEventListener('click', markerClicked);
+                document.querySelector('.image-container').appendChild(marker);
+
+                // Store marker data
+                markers.push({ x: Math.round(x), y: Math.round(y), element: marker });
+
+                // Add hidden inputs to the form for the marker coordinates
+                let xInput = document.createElement('input');
+                xInput.type = 'hidden';
+                xInput.name = 'markers_x';
+                xInput.value = Math.round(x);
+
+                let yInput = document.createElement('input');
+                yInput.type = 'hidden';
+                yInput.name = 'markers_y';
+                yInput.value = Math.round(y);
+
+                let distanceInput = document.createElement('input');
+                distanceInput.type = 'hidden';
+                distanceInput.name = 'markers_distance';
+                distanceInput.value = '';
+
+                form.appendChild(xInput);
+                form.appendChild(yInput);
+                form.appendChild(distanceInput);
+            });
+
+            function markerClicked(event) {
+                const marker = event.target;
+                const markerId = marker.dataset.id;
+                const rect = marker.getBoundingClientRect();
+                const distanceInput = document.createElement('input');
+                distanceInput.type = 'text';
+                distanceInput.className = 'distance-input';
+                distanceInput.placeholder = 'Distance';
+                distanceInput.style.left = `${rect.left}px`;
+                distanceInput.style.top = `${rect.bottom + 5}px`;
+                distanceInput.name = `markers_distance_${markerId}`;
+                distanceInput.addEventListener('blur', function () {
+                    const distance = parseFloat(distanceInput.value);
+                    if (!isNaN(distance)) {
+                        markers[markerId].distance = distance;
+                        document.querySelector(`input[name='markers_distance'][value='']`).value = distance;
+                    }
+                    distanceInput.remove();
+                });
+                document.body.appendChild(distanceInput);
+                distanceInput.focus();
+            }
+        });
+    </script>
+</body>
+</html>

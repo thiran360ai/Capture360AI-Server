@@ -11,55 +11,87 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
-
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# BASE_DIR = Path(__file__).resolve().parent.parent
+# STATIC_URL = '/static/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
+
+
+# SECURITY WARNING: don't run with debug turned on in production!
+
+# ALLOWED_HOSTS = ['localhost', '127.0.0.1', '2026-103-175-108-130.ngrok-free.app']
+
+# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-qy99_@e#dcu^cbt$=dazit$_*)5yz*)f_6cmkpxu9r-a9)iq90'
 
 # SECURITY WARNING: don't run with debug turned on in production!
+# DEBUG = True
 DEBUG = True
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'c893-103-175-108-62.ngrok-free.app']
 
-ACCESS_CONTROL_ALLOW_HEADERS = True
-ACCESS_CONTROL_ALLOW_HEADERS = [
-    'https://c893-103-175-108-62.ngrok-free.app',
-    'http://localhost:3000',
-    # 'https://sandbox.cashfree.com/pg/sdk/js/ping',
-    'https://sdk.cashfree.com',
+
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '8e89-106-219-183-151.ngrok-free.app','192.168.1.11:8080','192.168.1.11','192.168.180.202']
+
+CORS_ALLOW_HEADERS = [
+    'Accept',
+    'Accept-Encoding',
+    'Accept-Language',
+    'Connection',
+    'Content-Length',
+    'Content-Type',
+    'Host',
+    'Origin',
+    'Referer',
+    'User-Agent',
     'ngrok-skip-browser-warning',
-    'https://api.in.kaleyra.io/v1/HXIN1756628118IN/verify',
+    'strict-origin-when-cross-origin',
+    # Add other allowed headers if needed
 ]
-# CORS_URLS_REGEX = '^/v1/HXIN1756628118IN/verify/$'
 
-CORS_ALLOWED_ORIGIN_REGEXES = [
-    'https://api.in.kaleyra.io/v1/HXIN1756628118IN/verify',
-    'https://api\.in\.kaleyra\.io',
-    # Add other allowed origins using regex if needed
-]
 CORS_ALLOWED_ORIGINS = [
-    'https://api.in.kaleyra.io',
-    'http://localhost:19006',
-    'http://127.0.0.1:19006',
-    'https://7c8b-106-51-82-33.ngrok-free.app',
+    'https://8e89-106-219-183-151.ngrok-free.app',
+    'http://192.168.1.11:8080',
+    'http://192.168.1.11',
+    'http://192.168.180.202',
+    'http://192.168.180.202:8080',                     
     'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:3002',
+    'http://localhost:3003',
+    'http://localhost:3004',
+    'http://localhost:8090',
+    'https://thiran360ai.github.io',
+    'https://thiran360ai.github.io/capture360Admin/manifest.json',
+    'file:///D:/26/ne.html',
     'http://127.0.0.1',
     'http://127.0.0.1:8080',
-    'http://43.254.41.63:8080',
-    'http://superapp.kalyanicrm.com',
-    'https://7c8b-106-51-82-33.ngrok-free.app',
-    'http://localhost:3000',
-    # 'https://sandbox.cashfree.com/pg/sdk/js/ping',
-    'https://sdk.cashfree.com',
-    # 'https://api.in.kaleyra.io/v1/HXIN1756628118IN/verify',
-    
+    # 'http://ngrok-skip-browser-warning',  # Add scheme and netloc for 'ngrok-skip-browser-warning'
+    'https://gokulrajalp.github.io',
 ]
+
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins to simplify CORS configuration
+
 LOGIN_REDIRECT_URL = '/dashboard/'  # Redirect users after login
+APPEND_SLASH = False
+
+
 
 
 # Application definition
@@ -113,31 +145,44 @@ WSGI_APPLICATION = 'building_construction.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'building',
+        'NAME': 'capture360',
         'HOST':'localhost',
         'PORT':'3306',
         'USER':'root',
         'PASSWORD':'',
+        # 
     }
 } 
 
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_HOST_USER = "manikvasu2000@gmail.com"
+EMAIL_HOST_PASSWORD = "kqns jikr eoep yioj"
+EMAIL_USE_TLS = True
+DEFAULT_FROM_EMAIL = "manikvasu2000@gmail.com"
+
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
-
-AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
-]
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
+# AUTH_PASSWORD_VALIDATORS = [
+#     {
+#         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+#     },
+#     {
+#         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+#     },
+#     {
+#         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+#     },
+#     {
+#         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+#     },
+# ]
 
 
 # Internationalization
@@ -155,9 +200,23 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
+# settings.py
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR)
+
 STATIC_URL = 'static/'
+STATIC_URL = 'static/'
+#MEDIA_ROOT=os.path.join(BASE_DIR,'image')
+# MEDIA_URL='/images/'
+# MEDIA_ROOT=BASE_DIR/'static'
+
+# STATICFILES_DIRS=[
+#     BASE_DIR/'static'
+# ]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+

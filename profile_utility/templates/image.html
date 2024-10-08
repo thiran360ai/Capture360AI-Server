@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Floor Plan</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+</head>
+<body>
+    <div id="map" style="width: 100%; height: 600px;"></div>
+    <script>
+        var map = L.map('map').setView([51.505, -0.09], 13);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19
+        }).addTo(map);
+
+        fetch('/get-floor-plan/<plan_id>') // Replace with the actual plan_id
+        .then(response => response.json())
+        .then(data => {
+            if (data.floor_plan) {
+                L.imageOverlay(data.floor_plan, [[51.49, -0.08], [51.5, -0.06]]).addTo(map);
+            }
+        });
+
+        fetch('/calculate-distance/<plan_id>') // Replace with the actual plan_id
+        .then(response => response.json())
+        .then(data => {
+            if (data.total_distance) {
+                console.log("Total Distance: ", data.total_distance);
+            }
+        });
+
+        // Example locations - replace with actual data
+        var locations = [
+            [51.505, -0.09],
+            [51.51, -0.1],
+            [51.515, -0.12]
+        ];
+
+        var polyline = L.polyline(locations, {color: 'red'}).addTo(map);
+
+        map.fitBounds(polyline.getBounds());
+    </script>
+</body>
+</html>

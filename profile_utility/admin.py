@@ -20,12 +20,12 @@ class ItemListAdmin(admin.ModelAdmin):
 
 @admin.register(VideoUpload)
 class VideoUploadAdmin(admin.ModelAdmin):
-    list_display = ['user', 'floor', 'description', 'file', 'thumbnail', 'upload_date', 'plan']
+    list_display = ['user', 'floor', 'description', 'file', 'thumbnail', 'upload_date', 'plan','json']
 
 
 @admin.register(VideoFrame)
 class VideoFrameAdmin(admin.ModelAdmin):
-    list_display = ['video', 'frame_number', 'image', 'timestamp', 'plan']
+    list_display = ['video', 'frame_number', 'image', 'timestamp', 'plan','json']
 
 
 @admin.register(Customer)
@@ -35,4 +35,4 @@ class CustomerAdmin(admin.ModelAdmin):
 
 @admin.register(SaveJson)
 class SaveJsonAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'data']
+    list_display = ['id','project', 'name', 'data']

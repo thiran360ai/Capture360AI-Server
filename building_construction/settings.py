@@ -37,8 +37,7 @@ SECRET_KEY = 'django-insecure-qy99_@e#dcu^cbt$=dazit$_*)5yz*)f_6cmkpxu9r-a9)iq90
 # DEBUG = True
 DEBUG = True
 
-
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '8e89-106-219-183-151.ngrok-free.app','192.168.1.11:8080','192.168.1.11','192.168.180.202']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'bb05-59-97-51-97.ngrok-free.app','192.168.1.33','192.168.1.36','59.97.51.97','192.168.1.33','c432-59-97-51-97.ngrok-free.app','capture360.ai','www.capture360.9ai',]
 
 CORS_ALLOW_HEADERS = [
     'Accept',
@@ -57,16 +56,15 @@ CORS_ALLOW_HEADERS = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    'https://8e89-106-219-183-151.ngrok-free.app',
-    'http://192.168.1.11:8080',
-    'http://192.168.1.11',
-    'http://192.168.180.202',
-    'http://192.168.180.202:8080',                     
+    'https://bb05-59-97-51-97.ngrok-free.app',
+    ' http://192.168.1.33:8080',
+    'https://9646-106-219-181-170.ngrok-free.app',                    
     'http://localhost:3000',
     'http://localhost:3001',
     'http://localhost:3002',
     'http://localhost:3003',
     'http://localhost:3004',
+    # 
     'http://localhost:8090',
     'https://thiran360ai.github.io',
     'https://thiran360ai.github.io/capture360Admin/manifest.json',
@@ -75,6 +73,10 @@ CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:8080',
     # 'http://ngrok-skip-browser-warning',  # Add scheme and netloc for 'ngrok-skip-browser-warning'
     'https://gokulrajalp.github.io',
+    'http://192.168.1.3',
+    'https://capture360.ai',
+    'http://capture360.ai',
+    'https://www.capture360.ai',
 ]
 
 CORS_ALLOW_METHODS = [
@@ -85,6 +87,7 @@ CORS_ALLOW_METHODS = [
     'POST',
     'PUT',
 ]
+
 
 CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins to simplify CORS configuration
 
@@ -104,7 +107,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'profile_utility'
+    'profile_utility',
+    'newapp',
 ]
 
 MIDDLEWARE = [
@@ -142,18 +146,23 @@ WSGI_APPLICATION = 'building_construction.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
+from decouple import config
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'capture360',
-        'HOST':'localhost',
-        'PORT':'3306',
-        'USER':'root',
-        'PASSWORD':'',
-        # 
+        'ENGINE': config('DB_ENGINE', default='django.db.backends.mysql'),
+        'NAME': config('DB_NAME', default=''),
+        'USER': config('DB_USER', default=''),
+        'PASSWORD': config('DB_PASSWORD', default=''),
+        'HOST': config('DB_HOST', default='localhost'),
+        'PORT': config('DB_PORT', cast=int, default=3306),
+        'CONN_MAX_AGE': 600,
+        'POOL_OPTIONS': {
+            'MAX_CONNECTIONS': 100,  # Max connections per thread
+            'CONN_TIMEOUT': 60,  # 1 minute timeout
+        },
     }
-} 
-
+}
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.gmail.com"

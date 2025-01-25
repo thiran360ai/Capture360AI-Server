@@ -29,7 +29,7 @@ class ItemListSerializer(serializers.ModelSerializer):
 class VideoUploadSerializer(serializers.ModelSerializer):
     class Meta:
         model = VideoUpload
-        fields = ['id', 'user', 'floor', 'description', 'file', 'thumbnail', 'upload_date']
+        fields = ['id', 'user', 'floor', 'description', 'file', 'thumbnail', 'upload_date','plan','json']
 
 class LocationSerializer(serializers.ModelSerializer):
     class Meta:
@@ -56,9 +56,9 @@ class CustomerSerializer(serializers.ModelSerializer):
 class VideoDateSerializer(serializers.ModelSerializer):
     class Meta:
         model = VideoUpload
-        fields = ['id', 'upload_date', 'file', 'plan']
+        fields = ['id', 'upload_date', 'file', 'plan','json']
 
 class JsonSerializer(serializers.ModelSerializer):
     class Meta:
         model = SaveJson
-        fields = ['id', 'name', 'data']
+        fields = ['id','project', 'name', 'data']

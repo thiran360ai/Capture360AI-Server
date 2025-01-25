@@ -7,6 +7,7 @@ from django.contrib.auth.hashers import make_password, check_password
 from django.http import JsonResponse
 from building_construction.settings import EMAIL_HOST_USER
 from profile_utility.form import PlanForm
+from profile_utility.forms import VideoUploadForm
 from profile_utility.utils import calculate_distance_and_steps_from_sensor_data
 from .models import *
 from .serializers import *
@@ -117,6 +118,7 @@ def video_upload(request):
             'data': data_or_errors,
             'total_video_uploads': total_video_uploads
         }
+        
         return Response(response_data, status=status.HTTP_201_CREATED)
 
     return Response(data_or_errors, status=status.HTTP_400_BAD_REQUEST)
@@ -132,20 +134,49 @@ def success_page(request):
     return render(request, 'success_page.html')
 
 @api_view(['POST'])
-def save_json(request):
-    serializer = JsonSerializer(data=request.data)
-    success, data_or_errors = validate_and_save(serializer)
-    
-    if success:
-        return Response({'message': 'Json saved successfully'}, status=status.HTTP_201_CREATED)
+def save_json(request, project_id):
+    """Save JSON data for a specific project."""
+    # Try to get the project or return a 404 response
+    project = Post.objects.filter(id=project_id).first()
+    if not project:
+        return Response({'error': 'Project not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-    return Response(data_or_errors, status=status.HTTP_400_BAD_REQUEST)
+    # Initialize the serializer with request data, including the project ID
+    serializer = JsonSerializer(data={**request.data, 'project': project_id})
+
+    # Validate and save the data or return errors
+    if serializer.is_valid():
+        serializer.save()
+        return Response({'message': 'JSON saved successfully.'}, status=status.HTTP_201_CREATED)
+
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
 def floor_plan_json(request):
     floor_plan = SaveJson.objects.all()
     serializer = JsonSerializer(floor_plan, many=True)
     return Response(serializer.data)
+
+@api_view(['GET'])
+def floor_plan_project_id(request, project_id):
+    """Retrieve floor plan JSON data for a specific project ID."""
+    
+    # Filter floor plans by the given project ID
+    floor_plan = SaveJson.objects.filter(project_id=project_id)
+
+    # If no data found, return a 404 response
+    if not floor_plan.exists():
+        return Response(
+            {'error': f'No floor plans found for project ID {project_id}.'}, 
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    # Serialize the data
+    serializer = JsonSerializer(floor_plan, many=True)
+
+    # Return the serialized data with a 200 OK status
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 @api_view(['GET'])
 def get_floor_plan_id(request, floor_id):
@@ -157,80 +188,250 @@ def get_floor_plan_id(request, floor_id):
     return Response(serializer.data)
 
 
+import os
+import cv2
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from .models import VideoUpload
+
+def save_frame(image, output_directory, frame_count, video):
+    try:
+        # Save the frame as an image file
+        image_filename = f"{output_directory}/frame_{frame_count}.jpg"
+        cv2.imwrite(image_filename, image)
+        return image_filename
+    except Exception as e:
+        print(f"Error saving frame: {e}")
+        return None
+
+# @api_view(['GET'])
+# def video_processing(request):
+#     video_id = request.query_params.get('video_id')
+#     if not video_id:
+#         return Response({'error': 'Video ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+#     video = VideoUpload.objects.filter(id=video_id).first()
+#     if not video:
+#         return Response({'error': 'Video not found'}, status=status.HTTP_404_NOT_FOUND)
+
+#     try:
+#         video_path = video.file.path
+#         output_directory = f'media/video_images/{video_id}'
+        
+#         # Ensure the output directory exists
+#         os.makedirs(output_directory, exist_ok=True)
+
+#         # Open the video file
+#         cap = cv2.VideoCapture(video_path)
+#         if not cap.isOpened():
+#             print("Error opening video file.")
+#             return Response({'error': 'Error opening video file'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+#         fps = cap.get(cv2.CAP_PROP_FPS)
+#         if fps == 0:
+#             print("Error: FPS is zero, possibly an invalid video file.")
+#             return Response({'error': 'Invalid FPS, possibly an invalid video file'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+#         frame_count = 0
+
+#         # Process each frame
+#         while True:
+#             success, image = cap.read()
+#             if not success:
+#                 break
+
+#             # Save one frame per second
+#             if frame_count % int(fps) == 0:
+#                 image_path = save_frame(image, output_directory, frame_count, video)
+#                 if not image_path:
+#                     print("Error saving frame.")
+#                     return Response({'error': 'Error saving frame'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+#             frame_count += 1
+
+#         cap.release()
+#         return Response({'message': 'Video processed successfully'}, status=status.HTTP_200_OK)
+
+#     except Exception as e:
+#         print(f"Exception occurred: {e}")
+#         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# def save_frame(image, output_directory, frame_count, video):
+#     """Resizes and saves a frame image, creating a VideoFrame object."""
+#     try:
+#         # Resize image to 2:1 aspect ratio
+#         height, width, _ = image.shape
+#         new_width = int(height * 2)
+#         resized_image = cv2.resize(image, (new_width, height))
+        
+#         # Create image path and save the image
+#         image_path = os.path.join(output_directory, f'frame_{frame_count}.png')
+#         cv2.imwrite(image_path, resized_image)
+#         print('VideoFrame manik')
+
+#         # Create VideoFrame entry in the database
+#         VideoFrame.objects.create(
+#             video=video,
+#             frame_number=frame_count,
+#             image=image_path,
+#             timestamp=timezone.now()
+#             # plan=plan
+#         )
+#         print(VideoFrame)
+#         return image_path
+
+#     except Exception:
+#         return None
+
+# def get_video_frames(request, video_id):
+#     frames = VideoFrame.objects.filter(video_id=video_id).order_by('frame_number')
+#     frame_data = [{'frame_number': frame.frame_number, 'image_url': request.build_absolute_uri(frame.image.url)} for frame in frames]
+    
+#     if not frame_data:
+#         return JsonResponse({'error': 'Video frames not found'}, status=404)
+    
+#     return JsonResponse({'video_id': video_id, 'frames': frame_data}, status=200)
+
+import os
+import cv2
+from django.utils import timezone
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from .models import VideoUpload, VideoFrame
+from PIL import Image
+
+# @api_view(['GET'])
+# def video_processing(request):
+#     video_id = request.query_params.get('video_id')
+#     if not video_id:
+#         return Response({'error': 'Video ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+#     try:
+#         video = VideoUpload.objects.get(id=video_id)
+#     except VideoUpload.DoesNotExist:
+#         return Response({'error': 'Video not found'}, status=status.HTTP_404_NOT_FOUND)
+
+#     try:
+#         video_path = video.file.path
+#         output_directory = f'media/video_images/{video_id}'
+#         os.makedirs(output_directory, exist_ok=True)
+
+#         cap = cv2.VideoCapture(video_path)
+#         if not cap.isOpened():
+#             return Response({'error': 'Error opening video file'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+#         fps = cap.get(cv2.CAP_PROP_FPS)
+#         frame_count = 0
+#         success, image = cap.read()
+
+#         while success:
+#             if frame_count % int(fps) == 0:
+#                 image_path = os.path.join(output_directory, f'frame_{frame_count}.png')
+
+#                 # Resize image to 2:1 aspect ratio (adjust dimensions as needed)
+#                 height, width, _ = image.shape
+#                 new_width = int(height * 2)
+#                 resized_image = cv2.resize(image, (new_width, height))
+
+#                 # Save resized image as PNG
+#                 cv2.imwrite(image_path, resized_image)
+
+#                 VideoFrame.objects.create(
+#                     video=video,
+#                     frame_number=frame_count,
+#                     image=image_path,
+#                     timestamp=timezone.now(),
+#                     plan=video.plan,
+#                     json=json
+#                 )
+
+#             success, image = cap.read()
+#             frame_count += 1
+
+#         cap.release()
+
+#         return Response({'message': 'Video processed successfully'}, status=status.HTTP_200_OK)
+#     except Exception as e:
+#         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 @api_view(['GET'])
 def video_processing(request):
     video_id = request.query_params.get('video_id')
     if not video_id:
         return Response({'error': 'Video ID is required'}, status=status.HTTP_400_BAD_REQUEST)
 
-    video = VideoUpload.objects.filter(id=video_id).first()
-    if not video:
+    try:
+        # Fetch the video record
+        video = VideoUpload.objects.get(id=video_id)
+    except VideoUpload.DoesNotExist:
         return Response({'error': 'Video not found'}, status=status.HTTP_404_NOT_FOUND)
 
     try:
+        # Extract the JSON data associated with the video
+        json_data = None
+        if video.json:
+            json_data = video.json.data  # Assuming `SaveJson.data` is a JSONField containing JSON data
+
+        # Define output directory for frames
         video_path = video.file.path
         output_directory = f'media/video_images/{video_id}'
         os.makedirs(output_directory, exist_ok=True)
 
+        # Open video and process frames
         cap = cv2.VideoCapture(video_path)
         if not cap.isOpened():
             return Response({'error': 'Error opening video file'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         fps = cap.get(cv2.CAP_PROP_FPS)
         frame_count = 0
+        success, image = cap.read()
 
-        while True:
+        while success:
+            if frame_count % int(fps) == 0:  # Save one frame per second
+                image_path = os.path.join(output_directory, f'frame_{frame_count}.png')
+
+                # Resize image to 2:1 aspect ratio
+                height, width, _ = image.shape
+                new_width = int(height * 2)
+                resized_image = cv2.resize(image, (new_width, height))
+
+                # Save resized image as PNG
+                cv2.imwrite(image_path, resized_image)
+
+                # Save the frame and associated JSON to the database
+                VideoFrame.objects.create(
+                    video=video,
+                    frame_number=frame_count,
+                    image=image_path,
+                    timestamp=timezone.now(),
+                    plan=video.plan,
+                    json=video.json  # Save the associated JSON object here
+                )
+
             success, image = cap.read()
-            if not success:
-                break
-
-            if frame_count % int(fps) == 0:
-                image_path = save_frame(image, output_directory, frame_count, video)
-                if not image_path:
-                    return Response({'error': 'Error saving frame'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
             frame_count += 1
 
         cap.release()
+
         return Response({'message': 'Video processed successfully'}, status=status.HTTP_200_OK)
 
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-def save_frame(image, output_directory, frame_count, video):
-    """Resizes and saves a frame image, creating a VideoFrame object."""
-    try:
-        # Resize image to 2:1 aspect ratio
-        height, width, _ = image.shape
-        new_width = int(height * 2)
-        resized_image = cv2.resize(image, (new_width, height))
-        
-        # Create image path and save the image
-        image_path = os.path.join(output_directory, f'frame_{frame_count}.png')
-        cv2.imwrite(image_path, resized_image)
-
-        # Create VideoFrame entry in the database
-        VideoFrame.objects.create(
-            video=video,
-            frame_number=frame_count,
-            image=image_path,
-            timestamp=timezone.now(),
-            plan=video.plan
-        )
-        return image_path
-
-    except Exception:
-        return None
+from django.http import JsonResponse
+from .models import VideoFrame
 
 def get_video_frames(request, video_id):
-    frames = VideoFrame.objects.filter(video_id=video_id).order_by('frame_number')
-    frame_data = [{'frame_number': frame.frame_number, 'image_url': request.build_absolute_uri(frame.image.url)} for frame in frames]
-    
-    if not frame_data:
+    try:
+        frames = VideoFrame.objects.filter(video_id=video_id).order_by('frame_number')
+        frame_data = [{'frame_number': frame.frame_number, 'image_url': request.build_absolute_uri(frame.image.url)} for frame in frames]
+        return JsonResponse({'video_id': video_id, 'frames': frame_data}, status=200)
+    except VideoFrame.DoesNotExist:
         return JsonResponse({'error': 'Video frames not found'}, status=404)
     
-    return JsonResponse({'video_id': video_id, 'frames': frame_data}, status=200)
-
 def video_images(request):
     upload_date = request.GET.get('upload_date')
     video_id = request.GET.get('video_id')

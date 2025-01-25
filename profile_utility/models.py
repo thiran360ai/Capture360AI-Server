@@ -10,19 +10,9 @@ class CustomUser(AbstractUser):
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='member')
     location = models.CharField(max_length=255)
        # Specify unique related names for reverse accessors
-    groups = models.ManyToManyField(
-        'auth.Group',
-        verbose_name='groups',
-        blank=True,
-        related_name='customuser_set',  # Unique related name for groups
-        related_query_name='user',
-    )
+    groups = models.ManyToManyField('auth.Group',verbose_name='groups',blank=True,related_name='customuser_set')
     user_permissions = models.ManyToManyField(
-        'auth.Permission',
-        verbose_name='user permissions',
-        blank=True,
-        related_name='customuser_set',  # Unique related name for user permissions
-        related_query_name='user',
+        'auth.Permission',verbose_name='user permissions',blank=True,related_name='customuser_set',  related_query_name='user',
     )  # Remove the comma here
     def __str__(self) -> str:
         return self.username
@@ -62,6 +52,15 @@ class Location(models.Model):
     longitude = models.FloatField()
     timestamp = models.DateTimeField(auto_now_add=True)
 
+class SaveJson(models.Model):
+    project = models.ForeignKey(Post, on_delete=models.CASCADE)
+    # plan = models.ForeignKey(Plan, on_delete=models.CASCADE, blank=True, null=True)
+    name = models.CharField(max_length=255, null=True, blank=True)
+    data = models.JSONField(null=True, blank=True)
+
+    def __str__(self) -> str:
+        return self.name
+
 class VideoUpload(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, blank=True, null=True)
     floor = models.ForeignKey(ItemList, on_delete=models.CASCADE, blank=True, null=True)
@@ -70,6 +69,8 @@ class VideoUpload(models.Model):
     thumbnail = models.ImageField(upload_to='thumbnails/', blank=True, null=True)
     upload_date = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     plan = models.ForeignKey(Plan, on_delete=models.CASCADE, blank=True, null=True)
+    json = models.ForeignKey(SaveJson, on_delete=models.CASCADE, blank=True, null=True)
+
 
 class VideoFrame(models.Model):
     video = models.ForeignKey(VideoUpload, on_delete=models.CASCADE)
@@ -77,6 +78,7 @@ class VideoFrame(models.Model):
     image = models.ImageField(upload_to='video_frames/')
     timestamp = models.DateTimeField(auto_now_add=True)
     plan = models.ForeignKey(Plan, on_delete=models.CASCADE, blank=True, null=True)
+    json = models.ForeignKey(SaveJson, on_delete=models.CASCADE, blank=True, null=True)
 
 class Marker(models.Model):
     plan = models.ForeignKey(Plan, related_name='markers', on_delete=models.CASCADE)
@@ -108,6 +110,3 @@ class Customer(models.Model):
     def __str__(self) -> str:
         return self.username or "Unnamed Customer"
 
-class SaveJson(models.Model):
-    name = models.CharField(max_length=255, null=True, blank=True)
-    data = models.JSONField(null=True, blank=True)

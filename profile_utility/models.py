@@ -47,13 +47,13 @@ class Plan(models.Model):
         return self.floor_or_name or "Unnamed Plan"
 
 class Location(models.Model):
-    plan = models.ForeignKey(Plan, on_delete=models.CASCADE)
+    plan = models.ForeignKey(Plan, on_delete=models.CASCADE,blank=True, null=True)
     latitude = models.FloatField()
     longitude = models.FloatField()
     timestamp = models.DateTimeField(auto_now_add=True)
 
 class SaveJson(models.Model):
-    project = models.ForeignKey(Post, on_delete=models.CASCADE)
+    project = models.ForeignKey(Post, on_delete=models.CASCADE,blank=True, null=True)
     # plan = models.ForeignKey(Plan, on_delete=models.CASCADE, blank=True, null=True)
     name = models.CharField(max_length=255, null=True, blank=True)
     data = models.JSONField(null=True, blank=True)

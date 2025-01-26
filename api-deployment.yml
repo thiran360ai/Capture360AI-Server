@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-capture360
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-capture360
+  template:
+    metadata:
+      labels:
+        app: api-capture360
+    spec:
+      containers:
+      - name: api-capture360
+        image: ${IMAGE_NAME}
+        ports:
+        - containerPort: 8080
+        envFrom:
+        - secretRef:
+            name: api-c360-secret
+      imagePullSecrets:
+      - name: registry-auth
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-capture360-service
+spec:
+  selector:
+    app: api-capture360
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP  # Internal service for the ingress to use

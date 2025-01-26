@@ -43,3 +43,4 @@ tzdata==2024.1
 urllib3==2.2.2
 websockets==9.1
 python-decouple==3.8
+caniusepython3==7.0.0

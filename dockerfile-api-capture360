@@ -1,4 +1,4 @@
-# Use an Alpine image with Python 3.10
+## Use an Alpine image with Python 3.10
 FROM python:3.12.3
 
 # Set environment variables
@@ -9,6 +9,10 @@ ENV PYTHONUNBUFFERED=1
 
 # Set working directory
 WORKDIR /app
+
+#Install required packages
+RUN apt-get update && apt-get install -y libgl1 libgl1-mesa-glx
+
 
 # Upgrade pip to ensure compatibility
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel

@@ -20,7 +20,7 @@ RUN apk add --no-cache \
     libxcb \
     libxext \
     libxrender \
-    libgl1-mesa-glx \
+    mesa-gl \
     && apk add --no-cache --virtual .build-deps \
     gcc \
     g++ \

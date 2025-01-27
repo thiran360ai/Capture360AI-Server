@@ -1,35 +1,42 @@
+# Use Python 3.10-alpine as the base image
 FROM python:3.10-alpine
 
+# Set environment variables
+ENV PYTHONUNBUFFERED 1
+
+# Set working directory to /app
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies (required for building some Python packages)
 RUN apk add --no-cache \
-    libstdc++ \
-    libgcc \
-    libjpeg-turbo \
-    libpng \
-    libx11 \
-    libxcb \
-    libxcomposite \
-    gcc \
+    build-base \
+    libjpeg-turbo-dev \
+    libpng-dev \
+    libxml2-dev \
+    libxslt-dev \
     musl-dev \
-    mariadb-dev \
-    pkgconfig
+    libmagic \
+    gcc \
+    g++ \
+    libffi-dev \
+    zlib-dev \
+    && apk add --no-cache --virtual .build-deps gcc libc-dev libffi-dev \
+    && pip install --no-cache-dir --upgrade pip setuptools wheel
 
-# Upgrade pip and install Python dependencies
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel
-
-# Copy requirements.txt
-COPY requirements.txt ./
+# Copy the requirements.txt file into the container
+COPY requirements.txt ./ 
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
-COPY . .
+# Install rawpy separately if it causes issues
+RUN pip install rawpy==0.22.0 || echo "rawpy installation failed"
 
-# Expose application port (optional)
+# Copy the application code into the container
+COPY . /app/
+
+# Expose the port the app will run on
 EXPOSE 8000
 
-# Run the application
+# Set the entrypoint for the app (adjust to your specific app's start command)
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

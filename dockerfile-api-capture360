@@ -1,42 +1,35 @@
-# Use Python 3.10-alpine as the base image
-FROM python:3.10-alpine
+## Use an Alpine image with Python 3.10
+FROM python:3.12.3
 
 # Set environment variables
-ENV PYTHONUNBUFFERED 1
+ARG BUILD_TIMESTAMP
+ENV BUILD_TIMESTAMP=$BUILD_TIMESTAMP
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
-# Set working directory to /app
+# Set working directory
 WORKDIR /app
 
-# Install system dependencies (required for building some Python packages)
-RUN apk add --no-cache \
-    build-base \
-    libjpeg-turbo-dev \
-    libpng-dev \
-    libxml2-dev \
-    libxslt-dev \
-    musl-dev \
-    libmagic \
-    gcc \
-    g++ \
-    libffi-dev \
-    zlib-dev \
-    && apk add --no-cache --virtual .build-deps gcc libc-dev libffi-dev \
-    && pip install --no-cache-dir --upgrade pip setuptools wheel
+#Install required packages
+RUN apt-get update && apt-get install -y libgl1 libgl1-mesa-glx
 
-# Copy the requirements.txt file into the container
-COPY requirements.txt ./ 
 
-# Install Python dependencies
+# Upgrade pip to ensure compatibility
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+
+# Copy and install Python dependencies
+COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install rawpy separately if it causes issues
-RUN pip install rawpy==0.22.0 || echo "rawpy installation failed"
+# Copy application code
+COPY . .
 
-# Copy the application code into the container
-COPY . /app/
+# Ensure the entrypoint script is executable
+RUN chmod +x /app/entrypoint.sh
 
-# Expose the port the app will run on
-EXPOSE 8000
+# Expose the application port
+EXPOSE 8080
 
-# Set the entrypoint for the app (adjust to your specific app's start command)
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# Set the entrypoint and default command
+ENTRYPOINT ["/app/entrypoint.sh"]
+CMD ["sh", "-c", "python manage.py runserver 0.0.0.0:8080"]

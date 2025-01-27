@@ -1,5 +1,5 @@
-## Use an Alpine image with Python 3.10
-FROM python:3.12.3
+# Use an Alpine base image with Python 3.10
+FROM python:3.10-alpine
 
 # Set environment variables
 ARG BUILD_TIMESTAMP
@@ -10,9 +10,26 @@ ENV PYTHONUNBUFFERED=1
 # Set working directory
 WORKDIR /app
 
-#Install required packages
-RUN apt-get update && apt-get install -y libgl1 libgl1-mesa-glx
-
+# Install required packages and dependencies for Alpine
+RUN apk add --no-cache \
+    libstdc++ \
+    libgcc \
+    libjpeg-turbo \
+    libpng \
+    libx11 \
+    libxcb \
+    libxext \
+    libxrender \
+    libgl1-mesa-glx \
+    && apk add --no-cache --virtual .build-deps \
+    gcc \
+    g++ \
+    musl-dev \
+    jpeg-dev \
+    zlib-dev \
+    libffi-dev \
+    openssl-dev \
+    && apk del .build-deps
 
 # Upgrade pip to ensure compatibility
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel

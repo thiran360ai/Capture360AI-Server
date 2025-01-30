@@ -61,4 +61,4 @@ class VideoDateSerializer(serializers.ModelSerializer):
 class JsonSerializer(serializers.ModelSerializer):
     class Meta:
         model = SaveJson
-        fields = ['id','project', 'name', 'data']
+        fields = ['id','project', 'name', 'data','plan']

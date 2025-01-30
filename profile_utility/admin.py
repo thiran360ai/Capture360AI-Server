@@ -35,4 +35,4 @@ class CustomerAdmin(admin.ModelAdmin):
 
 @admin.register(SaveJson)
 class SaveJsonAdmin(admin.ModelAdmin):
-    list_display = ['id','project', 'name', 'data']
+    list_display = ['id','project', 'name', 'data','plan']

@@ -6,10 +6,10 @@ urlpatterns = [
     path('login/', login),
     path('total-users/', total_users, name='total_users'),
     path('post/', create_post, name='create_post'),
-    path('project/', total_posts, name='total_post'),
+    path('project/', total_posts, name='total_post'),#1
     path('create_project_list/', create_item_list, name='create_item_list'),
-    path('projectlist/', item_list, name='item_list'),
-    path('plan_details/', plan_list, name='plan_list'),
+    path('projectlist/', item_list, name='item_list'),#2
+    path('plan_details/', plan_list, name='plan_list'),#3
     path('plans/project/<int:project_id>/', get_plans_by_project_id, name='get_plans_by_project_id'),
     path('generate_floor_plan/<int:project_id>/', save_json),
     path('getFloorPlan/', floor_plan_json),
@@ -23,7 +23,7 @@ urlpatterns = [
     path('notification/', send_email_notification, name='send_email_notification'),
     path('upload-video/', upload_video, name='upload_video'),
     path('success-page/', success_page, name='success_page'),
-    path('plans/', plan_list, name='plan_list'),
+    path('plans/', plan_list, name='plan_list'),#4
     path('location_tracker/', location_tracker_view, name='location_tracker'),
     path('get-floor-plan/<int:plan_id>/', get_floor_plan, name='get_floor_plan'),
     path('upload-floor-plan/', upload_floor_plan, name='upload_floor_plan'),

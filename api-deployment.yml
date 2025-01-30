@@ -25,7 +25,7 @@ spec:
             name: api-c360-secret
       volumes:
       - name: api-storage
-        persistanceVolumeClaim:
+        persistentVolumeClaim:
           claimName: api-c360-storage-pvc  
       imagePullSecrets:
       - name: registry-auth

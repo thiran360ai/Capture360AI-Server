@@ -23,6 +23,7 @@ urlpatterns = [
     path('building/', include('profile_utility.urls')),
     path('auth/', include('djoser.urls')),  # Keep one set of authentication URLs
     path('auth/jwt/', include('djoser.urls.jwt')),  # Use a different path for JWT authentication
+    path('kovais/',include('Kovais.urls')),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -14,15 +14,29 @@ def users(request):
         serializer = UserDetailsSerializer(users, many=True)
         return Response(serializer.data)
     
+
+
 @api_view(['POST', 'GET'])
 def create_Employee(request):
     if request.method == 'POST':
         serializer = EmployeeSerializer(data=request.data)
         if serializer.is_valid():
+            # Hash the password before saving
             serializer.validated_data['password'] = make_password(serializer.validated_data['password'])
             user = Employee.objects.create(**serializer.validated_data)
             return Response({'message': 'User created successfully', 'user': serializer.data['username']}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    elif request.method == 'GET':
+        # Return a response for GET request if needed
+        # Example: Return a list of employees (or whatever data makes sense for your app)
+        employees = Employee.objects.all()
+        serializer = EmployeeSerializer(employees, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    # In case a request method other than POST or GET is sent, you could return a method not allowed response.
+    return Response({'message': 'Method Not Allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
 
 
 @api_view(['POST'])

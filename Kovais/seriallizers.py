@@ -33,7 +33,7 @@ class SaloonOrdersSerializer(serializers.ModelSerializer):
 class GymOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model =GymOrder
-        fields=  ['id','gender','timeslot','status','category','plan','amount','attendance','purchaseddate','created_at']
+        fields=  ['id','gender','age','timeslot','status','category','plan','amount','attendance','purchaseddate','created_at']
         created_at = serializers.SerializerMethodField()
 
 class SpaOrdersSerializer(serializers.ModelSerializer):

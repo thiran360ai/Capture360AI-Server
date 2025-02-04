@@ -34,5 +34,11 @@ urlpatterns = [
     path('get/hotel/orders/',get_hotel_orders),
     path('hotel/orders/',post_hotel_orders),
 
-    path('filter_saloon_order_by_status/<int:user_id>',filter_by_status_and_user,name="filter saloon order by user and status")
+    path('filter_saloon_order_by_status/<int:user_id>',filter_by_status_and_user,name="filter saloon order by user and status"),
+
+    #Attendance
+    path('Attendance/',create_attendance),
+    path('get-attendance-id/',get_attendance_id),
+    path('get/all-attendance/',get_all_attendance),
+    path('get-present/',get_present),
 ]

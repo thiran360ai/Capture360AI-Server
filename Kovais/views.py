@@ -1,7 +1,9 @@
+import datetime
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework import status
 from django.http import JsonResponse
+from django.utils.dateparse import parse_date
 from django.contrib.auth.hashers import make_password, check_password
 from rest_framework.decorators import api_view
 from Kovais.seriallizers import *
@@ -107,11 +109,11 @@ def create_user_details(request):
 @api_view(['POST'])
 def Emp_login(request):
     try:
-        username = request.data.get('username')
+        email = request.data.get('email')
         password = request.data.get('password')
 
         try:
-            user = Employee.objects.get(username=username)
+            user = Employee.objects.get(email=email)
         except Employee.DoesNotExist:
             return JsonResponse({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -243,3 +245,110 @@ def filter_by_status_and_user(request, user_id):
             return Response({'message': 'No completed orders for today for this user.'}, status=404)
     except Employee.DoesNotExist:
         return Response({'error': 'User not found'}, status=404)
+
+import datetime
+
+#Attendance
+from datetime import datetime  # Correct import
+
+@api_view(['POST'])
+def create_attendance(request):
+    employee = request.data.get('employee_attendance')
+    status = request.data.get('status')
+
+    if not status or not employee:
+        return JsonResponse({'error': 'Employee and status required'}, status=400)
+
+    # Normalize status input
+    normalized_status = status.strip().lower()
+    print(employee)
+    print(status)
+    print(normalized_status)
+
+    # Handle check-in
+    if normalized_status == "check in":
+        check_in_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
+        # Check if the employee has already checked in
+        if Attendance.objects.filter(employee_attendance_id=employee, status='check in').exists():
+            return JsonResponse({'error': 'Already checked in'}, status=400)
+
+        # Create a new attendance record with check-in time
+        attendance_data = {
+            'employee_attendance': employee,
+            'check_in': check_in_time,
+            'status': 'check in'
+        }
+      
+        serializer = AttendanceSerializer(data=attendance_data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'Checked in successfully', 'user': serializer.data}, status=201)
+
+        return Response(serializer.errors, status=400)
+
+    # Handle check-out
+    elif normalized_status == "check out":
+        # Find the latest check-in record for the employee
+        attendance_record = Attendance.objects.filter(employee_attendance_id=employee, status='check in').first()
+
+        if not attendance_record:
+            return JsonResponse({'error': 'No check-in record found'}, status=400)
+
+        check_out_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        # Update the existing record with check-out time
+        attendance_record.check_out = check_out_time
+        attendance_record.status = 'check out'
+        attendance_record.save()
+
+        # Update the attendance status based on check-out
+        if attendance_record.status == "check out":
+            attendance_record.status = 'Present'
+        else:
+            attendance_record.status = 'Absent'
+        attendance_record.save()
+
+        return Response({'message': 'Checked out successfully', 'user': AttendanceSerializer(attendance_record).data}, status=200)
+
+    else:
+        return JsonResponse({'error': 'Invalid status'}, status=400)
+
+    
+@api_view(['GET'])
+def get_attendance_id(request):
+    employee_id = request.query_params.get('employee_id')
+    
+    if not employee_id:
+        return Response({'error': 'Employee ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Fetch the attendance record for the given employee ID
+    attendance_record = Attendance.objects.filter(employee_attendance_id=employee_id).first()
+    
+    if not attendance_record:
+        return Response({'error': 'Attendance record not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Serialize the attendance record
+    serializer = AttendanceSerializer(attendance_record)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def get_all_attendance(request):
+    attendance = Attendance.objects.all()
+    serializer = AttendanceSerializer(attendance, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def get_present(request):
+    date_str = request.query_params.get('date', None)
+    if date_str:
+        date = parse_date(date_str)
+        if date is None:
+            return Response({'error': 'Invalid date format'}, status=status.HTTP_400_BAD_REQUEST)
+        present = Attendance.objects.filter(status='Present', date=date)  # Adjust 'date' to your date field name
+    else:
+        present = Attendance.objects.filter(status='Present')
+    
+    serializer = PresentSerializer(present, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)

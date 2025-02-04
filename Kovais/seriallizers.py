@@ -33,7 +33,7 @@ class SaloonOrdersSerializer(serializers.ModelSerializer):
 class GymOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model =GymOrder
-        fields=  ['id','gender','age','timeslot','status','category','plan','amount','attendance','purchaseddate','created_at']
+        fields=  ['id','customer_id','gender','age','timeslot','status','category','plan','amount','attendance','purchaseddate','expiry_date','created_at']
         created_at = serializers.SerializerMethodField()
 
 class SpaOrdersSerializer(serializers.ModelSerializer):
@@ -47,3 +47,20 @@ class HotelOrdersSerializer(serializers.ModelSerializer):
         model =HotelOrder
         fields=  ['id','username','order_type','category','services','date','time','created_at']
         created_at = serializers.SerializerMethodField()
+
+
+class AttendanceSerializer(serializers.ModelSerializer):
+    # check_in = serializers.SerializerMethodField()
+    class Meta:
+        model =Attendance
+        fields=['id','employee_attendance','status','check_in','check_out']
+       
+
+class PresentSerializer(serializers.ModelSerializer):
+    employee_name = serializers.SerializerMethodField()
+    class Meta:
+        model =Attendance
+        fields= ['id','employee','employee_name','status']
+
+    def get_employee_name(self, obj):
+        return obj.employee.name

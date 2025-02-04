@@ -3,7 +3,7 @@ from.models import *
 
 @admin.register(Employee)
 class CustomEmployeeAdmin(admin.ModelAdmin):
-    list_display= ['username','role','mobile','location','password','attendance','total_attendance','image','is_active']
+    list_display= ['id','username','role','mobile','location','password','attendance','total_attendance','image','is_active']
 
 @admin.register(UserDetails)
 class UserDetailsAdmin(admin.ModelAdmin):
@@ -17,7 +17,7 @@ class SaloonOrdersAdmin(admin.ModelAdmin):
 
 @admin.register(GymOrder)
 class GymOrderAdmin(admin.ModelAdmin):
-    list_display= ['id','gender','timeslot','status','category','plan','amount','attendance','purchaseddate','created_at']
+    list_display= ['id','customer_id','gender','timeslot','status','category','plan','amount','attendance','purchaseddate','expiry_date','created_at']
 
 
 @admin.register(SpaOrder)
@@ -28,3 +28,7 @@ class SpaOrdersAdmin(admin.ModelAdmin):
 @admin.register(HotelOrder)
 class HotelOrdersAdmin(admin.ModelAdmin):
     list_display= ['id','username','order_type','category','services','date','time','created_at']
+
+@admin.register(Attendance)
+class AttendanceAdmin(admin.ModelAdmin):
+    list_display= ['id','employee_attendance','status','check_in','check_out']

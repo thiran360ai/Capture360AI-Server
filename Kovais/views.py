@@ -122,6 +122,7 @@ def Emp_login(request):
             return JsonResponse({
                 'Message': 'Login successfully',
                 'success': True,  # Set success to True
+                'id':user.id,
                 'username': user.username,
                 'role': user.role
             }, status=status.HTTP_200_OK)

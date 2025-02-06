@@ -124,6 +124,8 @@ class Attendance(models.Model):
         related_name='attendances'  # Unique related name for reverse relation
     )
     status = models.CharField(max_length=255)
+    latitude =models.CharField(max_length=255,null=True,blank=True)
+    longitude =models.CharField(max_length=255,null=True,blank=True)
     check_in = models.DateTimeField(null=True, blank=True)
     check_out = models.DateTimeField(null=True, blank=True)
 

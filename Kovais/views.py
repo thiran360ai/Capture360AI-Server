@@ -21,13 +21,23 @@ def users(request):
 @api_view(['POST', 'GET'])
 def create_Employee(request):
     if request.method == 'POST':
+        email = request.data.get('email')
+
+        # Check if email already exists in the Employee table
+        if Employee.objects.filter(email=email).exists():
+            return Response({'error': 'Email already exists'}, status=400)
+
+        # Validate and serialize employee data
         serializer = EmployeeSerializer(data=request.data)
         if serializer.is_valid():
             # Hash the password before saving
             serializer.validated_data['password'] = make_password(serializer.validated_data['password'])
+            # Create new employee user
             user = Employee.objects.create(**serializer.validated_data)
-            return Response({'message': 'User created successfully', 'user': serializer.data['username']}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            # Return success message with username
+            return Response({'message': 'User created successfully', 'user': serializer.validated_data['username']}, status=201)
+        
+        return Response(serializer.errors, status=400)
     
     elif request.method == 'GET':
         # Return a response for GET request if needed
@@ -122,6 +132,7 @@ def Emp_login(request):
             return JsonResponse({
                 'Message': 'Login successfully',
                 'success': True,  # Set success to True
+                'user_id':user.id,
                 'username': user.username,
                 'role': user.role
             }, status=status.HTTP_200_OK)

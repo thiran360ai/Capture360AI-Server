@@ -11,7 +11,7 @@ class Employee(AbstractUser):
         ('gym', 'Gym'),
         ('hotel', 'Hotel')
     )
-
+    email =models.CharField(max_length=255,null=True,blank=True,unique=True)
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='member')
     mobile = models.CharField(max_length=255, null=True, blank=True)
     location = models.CharField(max_length=255, blank=True, null=True)

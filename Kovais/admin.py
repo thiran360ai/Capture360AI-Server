@@ -17,7 +17,7 @@ class SaloonOrdersAdmin(admin.ModelAdmin):
 
 @admin.register(GymOrder)
 class GymOrderAdmin(admin.ModelAdmin):
-    list_display= ['id','customer_id','gender','timeslot','status','category','plan','amount','attendance','purchaseddate','expiry_date','created_at']
+    list_display= ['id','customer_id','gender','age','timeslot','status','category','plan','amount','attendance','purchaseddate','expiry_date','created_at']
 
 
 @admin.register(SpaOrder)

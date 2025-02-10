@@ -26,6 +26,7 @@ def create_Employee(request):
             # Hash the password before saving
             serializer.validated_data['password'] = make_password(serializer.validated_data['password'])
             user = Employee.objects.create(**serializer.validated_data)
+            print(serializer)
             return Response({'message': 'User created successfully', 'user': serializer.data['username']}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -56,7 +57,7 @@ def Customer_login(request):
 
             if check_password(password, user.password):
                 
-                return JsonResponse({'Message': 'login successfully', 'username': user.name,'membership':user.membership}, status=status.HTTP_200_OK)
+                return JsonResponse({'Message': 'login successfully','user_id': user.id, 'username': user.name,'membership':user.membership}, status=status.HTTP_200_OK)
             else:
               
                 return JsonResponse({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
@@ -76,10 +77,10 @@ def total_employees(request):
 @api_view(['POST'])
 def create_user_details(request):
     name = request.data.get('name')
-    membership = request.data.get('membership', 'silver') 
+    membership = request.data.get('membership', 'silver')
     password = request.data.get('password')
-    subscribed = request.data.get('subscribed', False) 
-    premium_amount= request.data.get('premium_amount') 
+    subscribed = request.data.get('subscribed', False)
+    premium_amount = request.data.get('premium_amount')
 
     if not name or not password:
         return JsonResponse({'error': 'Name and password are required'}, status=400)
@@ -87,21 +88,27 @@ def create_user_details(request):
     if UserDetails.objects.filter(name=name).exists():
         return JsonResponse({'error': 'Username already exists'}, status=400)
 
-    # Set membership to gold if subscribed
-    if subscribed and premium_amount ==20000:
+    # Convert premium_amount to integer
+    try:
+        premium_amount = int(premium_amount) if premium_amount else 0
+    except ValueError:
+        return JsonResponse({'error': 'Invalid premium_amount'}, status=400)
+
+    # Set membership based on subscription and premium amount
+    if subscribed and premium_amount == 20000:
         membership = 'gold'
-    elif subscribed and premium_amount ==50000:
+    elif subscribed and premium_amount == 50000:
         membership = 'platinum'
 
-    # Prepare data for serializer
-    request.data['membership'] = membership  # Update membership in request data
+    # Create a mutable copy of request data
+    data = request.data.copy()
+    data['membership'] = membership
 
-    serializer = UserDetailsSerializer(data=request.data)
+    serializer = UserDetailsSerializer(data=data)
     if serializer.is_valid():
-        # Hash the password before saving
         serializer.validated_data['password'] = make_password(serializer.validated_data['password'])
-        user = UserDetails.objects.create(**serializer.validated_data)
-        return Response({'message': 'User created successfully'}, status=status.HTTP_201_CREATED)
+        serializer.save()
+        return Response({'message': 'User created successfully','user':serializer.data}, status=status.HTTP_201_CREATED)
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -304,7 +311,7 @@ def create_attendance(request):
         attendance_record.save()
 
         # Update the attendance status based on check-out
-        if attendance_record.status == "check out":
+        if attendance_record.status == "check out" and check_out_time:
             attendance_record.status = 'Present'
         else:
             attendance_record.status = 'Absent'

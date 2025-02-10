@@ -43,10 +43,10 @@ class UserDetails(models.Model):
         ('platinum', 'Platinum'),
     )
     name = models.CharField(max_length=256, blank=True, null=True)
-    membership = models.CharField(max_length=20, choices=MEMBERSHIP_CHOICES, default='silver')
+    membership = models.CharField(max_length=20, choices=MEMBERSHIP_CHOICES, default='silver',null=True,blank=True)
     password = models.CharField(max_length=255)
-    subscribed = models.BooleanField(default=False)
-    premium_amount = models.CharField(max_length=255)
+    subscribed = models.BooleanField(default=False,null=True,blank=True)
+    premium_amount = models.CharField(max_length=255,null=True,blank=True)
 
     def __str__(self):
         return self.name
@@ -110,11 +110,12 @@ class SpaOrder(models.Model):
 
 class HotelOrder(models.Model):
     username =models.ForeignKey(UserDetails,on_delete=models.CASCADE)
-    order_type = models.CharField(max_length=255,null=True,blank=True)
+    amount = models.CharField(max_length=255,null=True,blank=True)
+    check_in = models.DateTimeField(null=True, blank=True)
+    check_out = models.DateTimeField(null=True, blank=True)
     category=models.CharField(max_length=255,null=True,blank=True)
-    services=models.TextField(null=True,blank=True)
-    date=models.DateField(null=True,blank=True)
-    time=models.CharField(max_length=255,null=True,blank=True)
+    room_count=models.CharField(max_length=255,null=True,blank=True)
+    guest_count=models.CharField(max_length=255,null=True,blank=True)
     created_at =models.DateTimeField(auto_now_add=True)
 
 class Attendance(models.Model):

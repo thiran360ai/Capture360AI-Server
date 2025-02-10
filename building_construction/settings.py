@@ -37,7 +37,7 @@ SECRET_KEY = 'django-insecure-qy99_@e#dcu^cbt$=dazit$_*)5yz*)f_6cmkpxu9r-a9)iq90
 # DEBUG = True
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1','api.capture360.ai', '2fe9-59-97-51-97.ngrok-free.app','192.168.1.33','192.168.1.36','59.97.51.97','192.168.1.33','c432-59-97-51-97.ngrok-free.app','capture360.ai','www.capture360.9ai',]
+ALLOWED_HOSTS = ['localhost', '127.0.0.1','api.capture360.ai', '1d7c-59-97-51-97.ngrok-free.app','192.168.1.33','192.168.1.36','59.97.51.97','192.168.1.33','c432-59-97-51-97.ngrok-free.app','capture360.ai','www.capture360.9ai',]
 
 CORS_ALLOW_HEADERS = [
     'Accept',
@@ -56,7 +56,7 @@ CORS_ALLOW_HEADERS = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    'https://2fe9-59-97-51-97.ngrok-free.app',
+    'https://1d7c-59-97-51-97.ngrok-free.app',
     ' http://192.168.1.33:8080',
     'https://api.capture360.ai',
     'http://api.capture360.ai',

@@ -54,9 +54,13 @@ class Location(models.Model):
 
 class SaveJson(models.Model):
     project = models.ForeignKey(Post, on_delete=models.CASCADE,blank=True, null=True)
-    plan = models.ForeignKey(Plan, on_delete=models.CASCADE, blank=True, null=True)
+    plan = models.ForeignKey(Plan, on_delete=models.CASCADE,blank=True, null=True)
+    floor = models.ForeignKey(ItemList, on_delete=models.CASCADE, blank=True, null=True)
     name = models.CharField(max_length=255, null=True, blank=True)
     data = models.JSONField(null=True, blank=True)
+    
+    # def get_floor(self):
+    #     return self.plan.floor if self.plan else None
 
     def __str__(self) -> str:
         return self.name

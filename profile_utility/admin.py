@@ -1,6 +1,6 @@
 from django.contrib import admin
 from import_export.admin import ImportExportModelAdmin
-from .models import Post, Plan, ItemList, VideoUpload, VideoFrame, Customer, SaveJson,CustomUser
+from .models import Post, Plan, ItemList, VideoUpload, VideoFrame, Customer, SaveJson
 
 # Register your models here.
 @admin.register(Post)
@@ -10,7 +10,7 @@ class PostAdmin(admin.ModelAdmin):
 
 @admin.register(Plan)
 class PlanAdmin(admin.ModelAdmin):
-    list_display = ['project', 'floor', 'project_list', 'image']
+    list_display = ['project', 'floor', 'floor_or_name', 'image']
 
 
 @admin.register(ItemList)
@@ -35,8 +35,4 @@ class CustomerAdmin(admin.ModelAdmin):
 
 @admin.register(SaveJson)
 class SaveJsonAdmin(admin.ModelAdmin):
-    list_display = ['id','project', 'name', 'data','floor','plan']
-
-@admin.register(CustomUser)
-class CustomUserAdmin(admin.ModelAdmin):
-    list_display = ['username','email', 'location',]
+    list_display = ['id','project', 'name', 'data','plan']

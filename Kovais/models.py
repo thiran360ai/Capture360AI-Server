@@ -110,7 +110,7 @@ class SpaOrder(models.Model):
 
 class HotelOrder(models.Model):
     username =models.ForeignKey(UserDetails,on_delete=models.CASCADE)
-    amount = models.CharField(max_length=255,null=True,blank=True)
+    amount = models.TextField(null=True,blank=True)
     check_in = models.DateTimeField(null=True, blank=True)
     check_out = models.DateTimeField(null=True, blank=True)
     category=models.CharField(max_length=255,null=True,blank=True)

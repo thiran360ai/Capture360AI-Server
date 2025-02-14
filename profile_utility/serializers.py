@@ -19,12 +19,12 @@ class PostSerializer(serializers.ModelSerializer):
 class PlanSerializer(serializers.ModelSerializer):
     class Meta:
         model = Plan
-        fields = ['id', 'project', 'floor', 'floor_or_name', 'image']
+        fields = ['id', 'project', 'floor', 'project_list', 'image']
 
 class ItemListSerializer(serializers.ModelSerializer):
     class Meta:
         model = ItemList
-        fields = ['project', 'image', 'total_floors', 'no_of_employees']
+        fields = ['id','project', 'image', 'total_floors', 'no_of_employees']
 
 class VideoUploadSerializer(serializers.ModelSerializer):
     class Meta:

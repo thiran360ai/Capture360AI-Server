@@ -45,7 +45,7 @@ class SpaOrdersSerializer(serializers.ModelSerializer):
 class HotelOrdersSerializer(serializers.ModelSerializer):
     class Meta:
         model =HotelOrder
-        fields=  ['id','username','price','category','check_in','check_out','room_count','guest_count','created_at']
+        fields=  ['id','username','price','category','check_in','check_out','room_count','guest','created_at']
         created_at = serializers.SerializerMethodField()
 
 

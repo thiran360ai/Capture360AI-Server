@@ -27,7 +27,7 @@ class SpaOrdersAdmin(admin.ModelAdmin):
 
 @admin.register(HotelOrder)
 class HotelOrdersAdmin(admin.ModelAdmin):
-    list_display=['id','username','amount','category','check_in','check_out','room_count','guest_count','created_at']
+    list_display=['id','username','price','category','check_in','check_out','room_count','guest_count','created_at']
 @admin.register(Attendance)
 class AttendanceAdmin(admin.ModelAdmin):
     list_display= ['id','employee_attendance','status','check_in','check_out']

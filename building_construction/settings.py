@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 
 from pathlib import Path
 import os
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -37,7 +38,7 @@ SECRET_KEY = 'django-insecure-qy99_@e#dcu^cbt$=dazit$_*)5yz*)f_6cmkpxu9r-a9)iq90
 # DEBUG = True
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1','api.capture360.ai', '1d7c-59-97-51-97.ngrok-free.app','192.168.1.33','192.168.1.36','59.97.51.97','192.168.1.33','c432-59-97-51-97.ngrok-free.app','capture360.ai','www.capture360.9ai',]
+ALLOWED_HOSTS = ['localhost', '127.0.0.1','api.capture360.ai', 'b5f2-59-97-51-97.ngrok-free.app','192.168.1.55','192.168.1.36','59.97.51.97','192.168.1.33','c432-59-97-51-97.ngrok-free.app','capture360.ai','www.capture360.9ai',]
 
 CORS_ALLOW_HEADERS = [
     'Accept',
@@ -56,8 +57,8 @@ CORS_ALLOW_HEADERS = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    'https://1d7c-59-97-51-97.ngrok-free.app',
-    ' http://192.168.1.33:8080',
+    'https://b5f2-59-97-51-97.ngrok-free.app',
+    'http://192.168.1.33:8080',
     'https://api.capture360.ai',
     'http://api.capture360.ai',
     'https://9646-106-219-181-170.ngrok-free.app',                    
@@ -66,14 +67,10 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:3002',
     'http://localhost:3003',
     'http://localhost:3004',
-    # 
     'http://localhost:8090',
-    'https://thiran360ai.github.io',
-    'https://thiran360ai.github.io/capture360Admin/manifest.json',
-    'file:///D:/26/ne.html',
+    'https://thiran360ai.github.io',  # Corrected
     'http://127.0.0.1',
     'http://127.0.0.1:8080',
-    # 'http://ngrok-skip-browser-warning',  # Add scheme and netloc for 'ngrok-skip-browser-warning'
     'https://gokulrajalp.github.io',
     'http://192.168.1.3',
     'https://capture360.ai',
@@ -111,6 +108,9 @@ INSTALLED_APPS = [
     'rest_framework',
     'profile_utility',
     'Kovais',
+    'djoser',
+    'corsheaders',
+    'debug_toolbar'
 ]
 
 MIDDLEWARE = [
@@ -122,6 +122,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
 ]
 
 ROOT_URLCONF = 'building_construction.urls'
@@ -230,4 +231,9 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
+# INTERNAL_IPS = ['127.0.0.1'] django debug toolbar
+INTERNAL_IPS = [
+    # ...
+    "127.0.0.1",
+    # ...
+]

@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.forms import ValidationError
 # Create your models here.
 
 class Employee(AbstractUser):
@@ -67,16 +68,17 @@ class Booking(models.Model):
     
 
 class SaloonOrder(models.Model):
-    username =models.ForeignKey(UserDetails,on_delete=models.CASCADE)
+    customer_id =models.ForeignKey(UserDetails,on_delete=models.CASCADE)
     order_type = models.CharField(max_length=255,null=True,blank=True)
     category=models.CharField(max_length=255,null=True,blank=True)
     services=models.TextField(null=True,blank=True)
-    payment_status=models.CharField(max_length=255,null=True,blank=True)
+    payment_status=models.CharField(max_length=255,null=True,blank=True,default='pending')
     payment_type=models.CharField(max_length=255,null=True,blank=True)
     amount=models.CharField(max_length=255,null=True,blank=True)
     date=models.DateField(null=True,blank=True)
     time=models.CharField(max_length=255,null=True,blank=True)
     created_at =models.DateTimeField(auto_now_add=True)
+    status=models.CharField(max_length=255,null=True,blank=True)
 
     
 
@@ -92,31 +94,39 @@ class GymOrder(models.Model):
     amount=models.TextField(null=True,blank=True)
     purchaseddate=models.TextField(null=True,blank=True)
     expiry_date = models.TextField(null=True,blank=True)
+    payment_status=models.CharField(max_length=255,null=True,blank=True,default='pending')
     created_at =models.DateTimeField(auto_now_add=True)
 
 
 class SpaOrder(models.Model):
-    username =models.ForeignKey(UserDetails,on_delete=models.CASCADE)
+    customer_id =models.ForeignKey(UserDetails,on_delete=models.CASCADE)
     order_type = models.CharField(max_length=255,null=True,blank=True)
     category=models.CharField(max_length=255,null=True,blank=True)
     services=models.TextField(null=True,blank=True)
     date=models.DateField(null=True,blank=True)
     time=models.CharField(max_length=255,null=True,blank=True)
     amount=models.TextField(null=True,blank=True)
-    payment_status=models.CharField(max_length=255,null=True,blank=True)
+    payment_status=models.CharField(max_length=255,null=True,blank=True,default='pending')
     payment_type=models.CharField(max_length=255,null=True,blank=True)
-
     created_at =models.DateTimeField(auto_now_add=True)
 
 class HotelOrder(models.Model):
-    username =models.ForeignKey(UserDetails,on_delete=models.CASCADE)
+    customer_id =models.ForeignKey(UserDetails,on_delete=models.CASCADE)
+    guest_name =models.CharField(max_length=255,null=True,blank=True)
     amount = models.CharField(max_length=255,null=True,blank=True)
     check_in = models.DateTimeField(null=True, blank=True)
     check_out = models.DateTimeField(null=True, blank=True)
     category=models.CharField(max_length=255,null=True,blank=True)
-    room_count=models.CharField(max_length=255,null=True,blank=True)
+    room_count=models.CharField(max_length=255,null=True,blank=True,default=10)
     guest_count=models.CharField(max_length=255,null=True,blank=True)
+    status = models.CharField(max_length=255,null=True,blank=True)
+    payment_status=models.CharField(max_length=255,null=True,blank=True,default='pending')
     created_at =models.DateTimeField(auto_now_add=True)
+    
+    def clean(self):
+        if self.check_in and self.check_out:
+            if self.check_out <= self.check_in:
+                raise ValidationError({'check_out': 'Check-out date must be later than check-in date.'})
 
 class Attendance(models.Model):
     employee_attendance = models.ForeignKey(

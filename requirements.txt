@@ -1,6 +1,6 @@
 asgiref==3.8.1
 certifi==2019.9.11
-cffi==1.16.0
+# cffi==1.16.0
 chardet==3.0.4
 charset-normalizer==3.3.2
 commonmark==0.9.1
@@ -26,8 +26,8 @@ py-localtunnel==1.0.3
 pycparser==2.22
 Pygments==2.18.0
 PyJWT==2.8.0
-mysqlclient==2.1.1
-scipy==1.9.3
+# mysqlclient==2.1.1
+# scipy==1.9.3
 python3-openid==3.2.0
 requests==2.32.3
 requests-oauthlib==2.0.0
@@ -42,3 +42,4 @@ urllib3==2.2.2
 websockets==9.1
 python-decouple==3.8
 caniusepython3==7.0.0
+PyMySQL==1.1.1

@@ -115,7 +115,7 @@ class HotelOrder(models.Model):
     check_out = models.DateTimeField(null=True, blank=True)
     category=models.CharField(max_length=255,null=True,blank=True)
     room_count=models.CharField(max_length=255,null=True,blank=True)
-    guest=models.CharField(max_length=255,null=True,blank=True)
+    customer=models.CharField(max_length=255,null=True,blank=True)
     created_at =models.DateTimeField(auto_now_add=True)
 
 class Attendance(models.Model):

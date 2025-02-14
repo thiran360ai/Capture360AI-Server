@@ -108,9 +108,9 @@ INSTALLED_APPS = [
     'rest_framework',
     'profile_utility',
     'Kovais',
-    'djoser',
-    'corsheaders',
-    'debug_toolbar'
+#     'djoser',
+#     'corsheaders',
+#     'debug_toolbar'
 ]
 
 MIDDLEWARE = [

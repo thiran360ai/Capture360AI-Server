@@ -15,11 +15,18 @@ spec:
       containers:
       - name: api-capture360
         image: ${IMAGE_NAME}
+        volumeMounts:
+          - name: api-storage
+            mountPath: "/app/media"
         ports:
         - containerPort: 8080
         envFrom:
         - secretRef:
             name: api-c360-secret
+      volumes:
+      - name: api-storage
+        persistentVolumeClaim:
+          claimName: api-c360-storage-pvc  
       imagePullSecrets:
       - name: registry-auth
 

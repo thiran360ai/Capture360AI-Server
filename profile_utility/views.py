@@ -99,10 +99,10 @@ def plan_list(request):
         plans = Plan.objects.all()
         serializer = PlanSerializer(plans, many=True)
         return Response(serializer.data)
-    
+
     # POST request
-    serializer = PlanSerializer(data=request.data)
-    success, data_or_errors = validate_and_save(serializer)
+        serializer = PlanSerializer(data=request.data)
+        success, data_or_errors = validate_and_save(serializer)
     
     return Response(data_or_errors, status=status.HTTP_201_CREATED if success else status.HTTP_400_BAD_REQUEST)
 

@@ -25,26 +25,31 @@ class Post(models.Model):
     company_name = models.CharField(max_length=255, blank=True, null=True)
     location = models.CharField(max_length=255, blank=True, null=True)
 
-    def __str__(self) -> str:
-        return self.project_name
+#     def __str__(self) -> str:
+#         return self.project_name
 
 class ItemList(models.Model):
-    project = models.ForeignKey(Post, on_delete=models.CASCADE, blank=True, null=True)
+    project = models.ForeignKey(Post, on_delete=models.CASCADE, blank=True, null=True)  # Links to the project
     image = models.ImageField(null=True, blank=True)
-    total_floors = models.CharField(max_length=255, blank=True, null=True)
-    no_of_employees = models.CharField(max_length=255, blank=True, null=True)
+    total_floors = models.CharField(max_length=255, blank=True, null=True)  # Floor number or name
+    no_of_employees = models.CharField(max_length=255, blank=True, null=True)  # Optional employee count
 
     def __str__(self) -> str:
-        return self.total_floors or "Unnamed Item"
+        project_name = self.project.project_name if self.project else "No Project"
+        return f"{project_name} - {self.total_floors or 'Unnamed Floor'}"
+
+
 
 class Plan(models.Model):
     project = models.ForeignKey(Post, on_delete=models.CASCADE, blank=True, null=True)
-    floor = models.ForeignKey(ItemList, on_delete=models.CASCADE, blank=True, null=True)
+    project_list = models.ForeignKey(ItemList, on_delete=models.CASCADE, blank=True, null=True, related_name="plans")
+    floor = models.ForeignKey(ItemList, on_delete=models.CASCADE, blank=True, null=True, related_name="floors")  # Ensure this exists
     floor_or_name = models.CharField(max_length=255, blank=True, null=True)
     image = models.ImageField(null=True, blank=True)
 
-    def __str__(self) -> str:
-        return self.floor_or_name or "Unnamed Plan"
+
+#     def __str__(self) -> str:
+#         return self.floor_or_name or "Unnamed Plan"
 
 class Location(models.Model):
     plan = models.ForeignKey(Plan, on_delete=models.CASCADE,blank=True, null=True)
@@ -54,9 +59,13 @@ class Location(models.Model):
 
 class SaveJson(models.Model):
     project = models.ForeignKey(Post, on_delete=models.CASCADE,blank=True, null=True)
-    plan = models.ForeignKey(Plan, on_delete=models.CASCADE, blank=True, null=True)
+    plan = models.ForeignKey(Plan, on_delete=models.CASCADE,blank=True, null=True)
+    floor = models.ForeignKey(ItemList, on_delete=models.CASCADE, blank=True, null=True)
     name = models.CharField(max_length=255, null=True, blank=True)
     data = models.JSONField(null=True, blank=True)
+    
+    # def get_floor(self):
+    #     return self.plan.floor if self.plan else None
 
     def __str__(self) -> str:
         return self.name

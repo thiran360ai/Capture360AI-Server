@@ -19,6 +19,7 @@ urlpatterns = [
 
     path('get/saloon/orders/',get_saloon_orders),
     path('saloon/orders/',post_saloon_orders),
+    path('filter_saloon_order_by_status/<int:user_id>',filter_by_status_and_user,name="filter saloon order by user and status"),
 
     #gym
     path('get/gym/orders/',get_gym_orders),
@@ -33,8 +34,10 @@ urlpatterns = [
     #hotel
     path('get/hotel/orders/',get_hotel_orders),
     path('hotel/orders/',post_hotel_orders),
+    path('hotel/update/',update_hotel_orders),
+    path('filter_hotel_order_by_status/',get_hotel_order_status,name="filter hotel order by user and status"),
+    path('filter_by_payment_status/',get_payment_status,name="filter hotel order by user and status"),
 
-    path('filter_saloon_order_by_status/<int:user_id>',filter_by_status_and_user,name="filter saloon order by user and status"),
 
     #Attendance
     path('Attendance/',create_attendance),

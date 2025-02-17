@@ -9,12 +9,12 @@ class CustomerSerializer(serializers.ModelSerializer):
 class EmployeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employee
-        fields = ['id', 'username','password','mobile', 'email', 'role','success', 'location','first_name','last_name']
+        fields = ['id', 'username','password','mobile', 'email', 'role','success', 'location','first_name','last_name','success']
 
 class TotalEmployeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employee
-        fields = ['id', 'username', 'email', 'role','mobile', 'location','first_name','last_name']
+        fields = ['id', 'username', 'email', 'role','mobile', 'location','first_name','last_name','success']
 
 class UserDetailsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -45,7 +45,7 @@ class SpaOrdersSerializer(serializers.ModelSerializer):
 class HotelOrdersSerializer(serializers.ModelSerializer):
     class Meta:
         model =HotelOrder
-        fields=  ['id','username','order_type','category','services','date','time','created_at']
+        fields=  ['id','customer_id','amount','category','check_in','check_out','room_count','guest_count','created_at','status']
         created_at = serializers.SerializerMethodField()
 
 

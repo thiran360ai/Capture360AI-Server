@@ -6,11 +6,24 @@ from django.http import JsonResponse
 from django.utils.dateparse import parse_date
 from django.contrib.auth.hashers import make_password, check_password
 from rest_framework.decorators import api_view
-from Kovais.seriallizers import *
+from .seriallizers import *  
+from .models import * 
 import traceback
+import asyncio
 
 @api_view(['GET'])
 def users(request):
+    """
+    API endpoint to retrieve all users.
+
+    - `GET /users/`
+
+    Returns a JSON object with a list of all users if the request is successful.
+
+    Returns:
+    - A JSON object with the list of all users.
+    - 200 OK: If the retrieval is successful.
+    """
     if request.method == 'GET':
         users = UserDetails.objects.all()
         serializer = UserDetailsSerializer(users, many=True)
@@ -20,29 +33,37 @@ def users(request):
 
 @api_view(['POST', 'GET'])
 def create_Employee(request):
+    """
+    API endpoint to create a new employee.
+
+    Accepts the following parameters in the request body:
+    - username: The username of the employee.
+    - password: The password of the employee.
+    - mobile: The mobile number of the employee.
+    - email: The email of the employee.
+    - role: The role of the employee.
+    - location: The location of the employee.
+
+    Returns a JSON object with the newly created employee details if the creation is successful.
+    Returns a JSON object with an error message if the creation fails.
+
+    Also handles GET requests and returns a list of all employees if a GET request is sent.
+    """
     if request.method == 'POST':
-        email = request.data.get('email')
-
-        # Check if email already exists in the Employee table
-        if Employee.objects.filter(email=email).exists():
-            return Response({'error': 'Email already exists'}, status=400)
-
-        # Validate and serialize employee data
-        serializer = EmployeeSerializer(data=request.data)
+        serializer =  EmployeeSerializer(data=request.data)
         if serializer.is_valid():
             # Hash the password before saving
             serializer.validated_data['password'] = make_password(serializer.validated_data['password'])
-            # Create new employee user
+            serializer.validated_data['success'] = True
             user = Employee.objects.create(**serializer.validated_data)
-            # Return success message with username
-            return Response({'message': 'User created successfully', 'user': serializer.validated_data['username']}, status=201)
-        
-        return Response(serializer.errors, status=400)
+            return Response({'message': 'User created successfully', 'user': serializer.data['username'],'success':serializer.data['success']}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
     
     elif request.method == 'GET':
         # Return a response for GET request if needed
         # Example: Return a list of employees (or whatever data makes sense for your app)
-        employees = Employee.objects.all()
+        employees =Employee.objects.all()
         serializer = EmployeeSerializer(employees, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
@@ -53,23 +74,37 @@ def create_Employee(request):
 
 @api_view(['POST'])
 def Customer_login(request):
+    """
+    API endpoint for customer login.
+
+    Accepts the following parameters in the request body:
+    - username: The username of the customer attempting to login.
+    - password: The password of the customer.
+
+    Returns a JSON response containing the message "login successfully" and the customer's username and membership if the login is successful.
+    Returns a JSON object with an error message if the login fails.
+
+    Returns:
+    - 200 OK: A JSON object with a success message, username, and membership if credentials are valid.
+    - 400 Bad Request: A JSON object with an error message if credentials are invalid.
+    - 500 Internal Server Error: A JSON object with an error message if an unexpected error occurs.
+    """
     try:
-            username = request.data.get('username')
-            password = request.data.get('password')
-           
+        username = request.data.get('username')
+        password = request.data.get('password')
 
-            try:
-                user = UserDetails.objects.get(name=username)
-            except UserDetails.DoesNotExist:
-              
-                return JsonResponse({'login': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            user = UserDetails.objects.get(name=username)
+        except UserDetails.DoesNotExist:
+            
+            return JsonResponse({'login': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
 
-            if check_password(password, user.password):
-                
-                return JsonResponse({'Message': 'login successfully', 'username': user.name,'membership':user.membership}, status=status.HTTP_200_OK)
-            else:
-              
-                return JsonResponse({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
+        if check_password(password, user.password):
+            
+            return JsonResponse({'Message': 'login successfully', 'username': user.name,'membership':user.membership}, status=status.HTTP_200_OK)
+        else:
+            
+            return JsonResponse({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
     except Exception as e:
             # Print the full traceback to debug the issue
         traceback.print_exc()
@@ -78,6 +113,16 @@ def Customer_login(request):
 
 @api_view(['GET'])
 def total_employees(request):
+    """
+    API endpoint to retrieve all employees.
+
+    This function handles GET requests to retrieve a list of all employees.
+    It serializes the employee data and returns it as a JSON response.
+
+    Returns:
+    - 200 OK: A JSON object containing a list of all employees with their details.
+    """
+
     users = Employee.objects.all()
     serializer = TotalEmployeeSerializer(users, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
@@ -85,11 +130,26 @@ def total_employees(request):
 
 @api_view(['POST'])
 def create_user_details(request):
+    """
+    Creates a new user with the given details.
+
+    Args:
+        request: The POST request containing the user details.
+
+    Returns:
+        A JSON response containing the message "User created successfully" if the user is created successfully.
+        A JSON response containing error details if user creation fails.
+
+    Raises:
+        400: If the required fields are not provided.
+        400: If the username already exists.
+        400: If the premium_amount is invalid.
+    """
     name = request.data.get('name')
-    membership = request.data.get('membership', 'silver') 
+    membership = request.data.get('membership', 'silver')
     password = request.data.get('password')
-    subscribed = request.data.get('subscribed', False) 
-    premium_amount= request.data.get('premium_amount') 
+    subscribed = request.data.get('subscribed', False)
+    premium_amount = request.data.get('premium_amount')
 
     if not name or not password:
         return JsonResponse({'error': 'Name and password are required'}, status=400)
@@ -97,27 +157,49 @@ def create_user_details(request):
     if UserDetails.objects.filter(name=name).exists():
         return JsonResponse({'error': 'Username already exists'}, status=400)
 
-    # Set membership to gold if subscribed
-    if subscribed and premium_amount ==20000:
+    # Convert premium_amount to integer
+    try:
+        premium_amount = int(premium_amount) if premium_amount else 0
+    except ValueError:
+        return JsonResponse({'error': 'Invalid premium_amount'}, status=400)
+
+    # Set membership based on subscription and premium amount
+    if subscribed and premium_amount == 20000:
         membership = 'gold'
-    elif subscribed and premium_amount ==50000:
+    elif subscribed and premium_amount == 50000:
         membership = 'platinum'
 
-    # Prepare data for serializer
-    request.data['membership'] = membership  # Update membership in request data
+    # Create a mutable copy of request data
+    data = request.data.copy()
+    data['membership'] = membership
 
-    serializer = UserDetailsSerializer(data=request.data)
+    serializer = UserDetailsSerializer(data=data)
     if serializer.is_valid():
-        # Hash the password before saving
         serializer.validated_data['password'] = make_password(serializer.validated_data['password'])
-        user = UserDetails.objects.create(**serializer.validated_data)
-        return Response({'message': 'User created successfully'}, status=status.HTTP_201_CREATED)
+        serializer.save()
+        return Response({'message': 'User created successfully','user':serializer.data}, status=status.HTTP_201_CREATED)
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
 def Emp_login(request):
+    """
+    API endpoint for employee login.
+
+    Accepts the following parameters in the request body:
+    - email: The email of the employee attempting to login.
+    - password: The password of the employee.
+
+    Returns a JSON response containing a message and employee details if the login is successful.
+    Returns a JSON object with an error message if the login fails.
+
+    Returns:
+    - 200 OK: A JSON object with a success message, employee ID, username, and role if credentials are valid.
+    - 400 Bad Request: A JSON object with an error message if credentials are invalid.
+    - 500 Internal Server Error: A JSON object with an error message if an unexpected error occurs.
+    """
+
     try:
         email = request.data.get('email')
         password = request.data.get('password')
@@ -132,7 +214,7 @@ def Emp_login(request):
             return JsonResponse({
                 'Message': 'Login successfully',
                 'success': True,  # Set success to True
-                'user_id':user.id,
+                'id':user.id,
                 'username': user.username,
                 'role': user.role
             }, status=status.HTTP_200_OK)
@@ -147,6 +229,15 @@ def Emp_login(request):
 
 @api_view(['GET'])
 def get_saloon_orders(request):
+    """
+    API endpoint to retrieve all saloon orders.
+
+    Returns a JSON response containing a list of all saloon orders
+    with their details if the retrieval is successful.
+
+    Returns:
+    - 200 OK: A JSON object with the list of all saloon orders.
+    """
     orders = SaloonOrder.objects.all()
     serializer = SaloonOrdersSerializer(orders, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
@@ -155,6 +246,24 @@ def get_saloon_orders(request):
 # @csrf_exempt
 @api_view(['POST'])
 def post_saloon_orders(request):
+    """
+    API endpoint to create a new saloon order.
+
+    Accepts the following parameters in the request body:
+    - username: The username of the customer making the request.
+    - order_type: The type of the order.
+    - category: The category of the order.
+    - services: The services selected for the order.
+    - date: The date of the order.
+    - time: The time of the order.
+
+    Returns a JSON response containing a message and the created order details if the creation is successful.
+    Returns a JSON object with an error message if the creation fails.
+
+    Returns:
+    - 201 Created: A JSON object with the created order details.
+    - 400 Bad Request: A JSON object with an error message.
+    """
     if request.method == 'POST':
         serializer = SaloonOrdersSerializer(data=request.data)
         
@@ -168,6 +277,24 @@ def post_saloon_orders(request):
 
 @api_view(['POST'])
 def post_gym_orders(request):
+    """
+    API endpoint to create a new gym order.
+
+    Accepts the following parameters in the request body:
+    - username: The username of the customer making the request.
+    - order_type: The type of the order.
+    - category: The category of the order.
+    - services: The services selected for the order.
+    - date: The date of the order.
+    - time: The time of the order.
+
+    Returns a JSON response containing a message and the created order details if the creation is successful.
+    Returns a JSON object with an error message if the creation fails.
+
+    Returns:
+    - 201 Created: A JSON object with the created order details.
+    - 400 Bad Request: A JSON object with an error message.
+    """
     if request.method == 'POST':
         serializer = GymOrderSerializer(data=request.data)
         
@@ -181,6 +308,15 @@ def post_gym_orders(request):
 
 @api_view(['GET'])
 def get_gym_orders(request):
+    """
+    API endpoint to retrieve all gym orders.
+
+    Returns a JSON response containing a list of all gym orders
+    with their details if the retrieval is successful.
+
+    Returns:
+    - 200 OK: A JSON object with the list of all gym orders.
+    """
     orders = GymOrder.objects.all()
     serializer = GymOrderSerializer(orders, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
@@ -190,6 +326,24 @@ def get_gym_orders(request):
 
 @api_view(['POST'])
 def post_spa_orders(request):
+    """
+    API endpoint to create a new spa order.
+
+    Accepts the following parameters in the request body:
+    - username: The username of the customer making the request.
+    - order_type: The type of the order.
+    - category: The category of the order.
+    - services: The services selected for the order.
+    - date: The date of the order.
+    - time: The time of the order.
+
+    Returns a JSON response containing a message and the created order details if the creation is successful.
+    Returns a JSON object with an error message if the creation fails.
+
+    Returns:
+    - 201 Created: A JSON object with the created order details.
+    - 400 Bad Request: A JSON object with an error message.
+    """
     if request.method == 'POST':
         serializer = SpaOrdersSerializer(data=request.data)
         
@@ -203,6 +357,15 @@ def post_spa_orders(request):
 
 @api_view(['GET'])
 def get_spa_orders(request):
+    """
+    API endpoint to retrieve all spa orders.
+
+    Returns a JSON response containing a list of all spa orders
+    with their details if the retrieval is successful.
+
+    Returns:
+    - 200 OK: A JSON object with the list of all spa orders.
+    """
     orders = SpaOrder.objects.all()
     serializer = SpaOrdersSerializer(orders, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
@@ -211,22 +374,103 @@ def get_spa_orders(request):
 
 @api_view(['POST'])
 def post_hotel_orders(request):
+    """
+    API endpoint to create a new hotel order.
+
+    Accepts the following parameters in the request body:
+    - username: The username of the customer making the booking.
+    - amount: The total amount of the booking.
+    - category: The category of the booking (e.g. 'single', 'double', etc.).
+    - check_in: The check-in date of the booking in the format 'YYYY-MM-DD'.
+    - check_out: The check-out date of the booking in the format 'YYYY-MM-DD'.
+    - room_count: The number of rooms booked.
+    - guest_count: The number of guests in the booking.
+
+    Returns a JSON object with the newly created order details if the creation is successful.
+    Returns a JSON object with an error message if the creation fails.
+    """
     if request.method == 'POST':
-        serializer = HotelOrdersSerializer(data=request.data)
-        
+        serializer = HotelOrdersSerializer(data=request.data)        
         if serializer.is_valid():
+            if serializer.validated_data['status'] =="" or "booked":
+                serializer.validated_data['status'] = "Booked"
             serializer.save()  # Save the validated data
 
             return Response({'message': 'Hotel Booking success', 'order': serializer.data}, status=status.HTTP_201_CREATED)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+@api_view(['PUT'])
+def update_hotel_orders(request):
+ 
+    """
+    API endpoint to update a specific hotel order record based on customer id.
+
+    Accepts the following parameters in the request body:
+    - status: The status to update the order record with. Accepted values are 'check_in' and 'check_out'.
+    - customer_id: The id of the customer making the request.
+
+    Returns a JSON object with the updated order record details if the update is successful.
+    Returns a JSON object with an error message if the update fails.
+    """
+
+    try:
+        param = request.query_params.get('customer_id')
+        order_param = request.query_params.get('order_id')
+        hotel = HotelOrder.objects.get(customer_id =param,id=order_param)  # Fetch the specific hotel order record by primary key
+    except HotelOrder.DoesNotExist:
+        return Response({'error': 'Hotel order record not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = HotelOrdersSerializer(hotel, data=request.data,partial =True)
+    if serializer.is_valid():
+        if request.data.get('status')=='check_in':
+            serializer.validated_data['status']='checked_in'
+            serializer.validated_data['check_in'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        if request.data.get('status')=='check_out':
+            serializer.validated_data['status']='checked_out'
+            serializer.validated_data['check_out'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
 def get_hotel_orders(request):
+    """
+    API endpoint to retrieve all hotel orders.
+
+    Returns a JSON response containing a list of all hotel orders
+    with their details if the retrieval is successful.
+
+    Returns:
+    - 200 OK: A JSON object with the list of all hotel orders.
+    """
+
     orders = HotelOrder.objects.all()
     serializer = HotelOrdersSerializer(orders, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def get_hotel_order_status(request):
+    """
+    API endpoint to fetch all hotel orders based on their status.
+
+    Accepts the following parameter in the request query string:
+    - status: The status of the orders to fetch. Accepted values are 'Booked', 'checked_in', 'checked_out'.
+
+    Returns a JSON object with the list of hotel orders if the fetch is successful.
+    Returns a JSON object with an error message if the fetch fails.
+    """
+    status_param = request.query_params.get('status', None).lower()
+    
+    try:
+        print(status)
+        order = HotelOrder.objects.filter(status=status_param)
+        if not order.exists():
+            return Response({'message': 'No hotel orders found for the given status.'}, status=status.HTTP_404_NOT_FOUND)
+        serializer =HotelOrdersSerializer(order,many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 from django.utils import timezone
@@ -235,6 +479,25 @@ from django.utils import timezone
 @api_view(['GET'])
 def filter_by_status_and_user(request, user_id):
     # Get the current date (timezone-aware)
+    """
+    API endpoint to filter SaloonOrders by status, date, and user.
+
+    - `GET /saloon/orders/user/<int:user_id>`
+
+    Returns a JSON object with the list of completed orders for the given user on the current date
+    if there are orders, or a message if there are no orders.
+
+    Parameters:
+    - `user_id`: The id of the user (Employee) to filter orders by.
+
+    Returns:
+    - A JSON object with a list of orders if there are completed orders for the given user on the current date.
+    - A JSON object with a message if there are no completed orders for the given user on the current date.
+
+    Raises:
+    - `404`: If the user is not found.
+    """
+
     today = timezone.now().date()
 
     try:
@@ -257,13 +520,26 @@ def filter_by_status_and_user(request, user_id):
     except Employee.DoesNotExist:
         return Response({'error': 'User not found'}, status=404)
 
-import datetime
+
 
 #Attendance
 from datetime import datetime  # Correct import
 
 @api_view(['POST'])
 def create_attendance(request):
+    """
+    API endpoint to create a new attendance record or update an existing one based on the provided status.
+
+    Accepts the following parameters in the request body:
+    - employee_attendance: The id of the employee (Employee) to create an attendance record for.
+    - status: The status of the attendance record to create or update. Accepted values are 'check in' and 'check out'.
+
+    Returns a JSON object with the created or updated attendance record details if the request is successful.
+    Returns a JSON object with an error message if the request fails.
+
+    Raises:
+    - 400: If the request body is invalid or if the employee has already checked in or out.
+    """
     employee = request.data.get('employee_attendance')
     status = request.data.get('status')
 
@@ -314,7 +590,7 @@ def create_attendance(request):
         attendance_record.save()
 
         # Update the attendance status based on check-out
-        if attendance_record.status == "check out":
+        if attendance_record.status == "check out" and check_out_time:
             attendance_record.status = 'Present'
         else:
             attendance_record.status = 'Absent'
@@ -328,6 +604,23 @@ def create_attendance(request):
     
 @api_view(['GET'])
 def get_attendance_id(request):
+    """
+    API endpoint to get attendance record by employee ID.
+
+    - `GET /attendance/id?employee_id=<int:employee_id>`
+
+    Parameters:
+    - `employee_id`: The id of the employee (Employee) to filter attendance records by.
+
+    Returns:
+    - A JSON object with the attendance record details if the record is found.
+    - A JSON object with an error message if the record is not found.
+
+    Raises:
+    - `400`: If the employee ID is not provided.
+    - `404`: If the attendance record is not found.
+    """
+
     employee_id = request.query_params.get('employee_id')
     
     if not employee_id:
@@ -345,6 +638,18 @@ def get_attendance_id(request):
 
 @api_view(['GET'])
 def get_all_attendance(request):
+    """
+    API endpoint to retrieve all attendance records.
+
+    - `GET /all-attendance/`
+
+    Returns a JSON object with a list of all attendance records if the request is successful.
+
+    Returns:
+    - A JSON object with the list of all attendance records.
+    - 200 OK: If the retrieval is successful.
+    """
+
     attendance = Attendance.objects.all()
     serializer = AttendanceSerializer(attendance, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
@@ -352,6 +657,22 @@ def get_all_attendance(request):
 
 @api_view(['GET'])
 def get_present(request):
+    """
+    API endpoint to get a list of employees who are present on a given date or for all dates if no date is provided.
+
+    - `GET /present?date=<date>`
+
+    Parameters:
+    - `date`: The date string in the format 'YYYY-MM-DD' to filter attendance records by.
+
+    Returns:
+    - A JSON object with a list of present employees if the request is successful.
+    - A JSON object with an error message if the request fails.
+
+    Raises:
+    - `400`: If the date format is invalid.
+    """
+
     date_str = request.query_params.get('date', None)
     if date_str:
         date = parse_date(date_str)
@@ -363,3 +684,39 @@ def get_present(request):
     
     serializer = PresentSerializer(present, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def get_payment_status(request):
+    """
+    API endpoint to update the payment status of a hotel order.
+
+    - `GET /payment-status?customer_id=<int:customer_id>&order_id=<int:order_id>&status=<str:status>`
+
+    Parameters:
+    - `customer_id`: The id of the customer (Employee) to filter orders by.
+    - `order_id`: The id of the order to update the payment status for.
+    - `status`: The status to update the order record with. Accepted values are 'paid' and 'unpaid'.
+
+    Returns a JSON object with the updated order record details if the update is successful.
+    Returns a JSON object with an error message if the update fails.
+
+    Raises:
+    - `404`: If the hotel order record is not found.
+    """
+    
+    
+    try:
+        param = request.query_params.get('customer_id')
+        # status_param = request.query_params.get('status', None).lower()
+        order_param = request.query_params.get('order_id')
+        hotel = HotelOrder.objects.get(customer_id =param,id=order_param)  # Fetch the specific hotel order record by primary key
+    except HotelOrder.DoesNotExist:
+        return Response({'error': 'Hotel order record not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = HotelOrdersSerializer(hotel, data=request.data,partial =True)
+    if serializer.is_valid():
+        if request.data.get('payment_status')=='paid':
+            serializer.validated_data['payment_status']='paid'
+            serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

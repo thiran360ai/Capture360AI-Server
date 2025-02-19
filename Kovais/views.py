@@ -101,7 +101,7 @@ def Customer_login(request):
 
         if check_password(password, user.password):
             
-            return JsonResponse({'Message': 'login successfully', 'username': user.name,'membership':user.membership}, status=status.HTTP_200_OK)
+            return JsonResponse({'Message': 'login successfully','id':user.id,'username': user.name,'membership':user.membership}, status=status.HTTP_200_OK)
         else:
             
             return JsonResponse({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)

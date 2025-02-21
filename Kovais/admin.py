@@ -27,7 +27,13 @@ class UserDetailsAdmin(admin.ModelAdmin):
 
 # @admin.register(HotelOrder)
 # class HotelOrdersAdmin(admin.ModelAdmin):
-#     list_display=['id','username','amount','category','check_in','check_out','room_count','guest_count','created_at']
+#     list_display= ['id','customer_id','amount','category','check_in','check_out','room_count','guest_count','created_at','status','payment_status']
+
 @admin.register(Attendance)
 class AttendanceAdmin(admin.ModelAdmin):
     list_display= ['id','employee_attendance','status','check_in','check_out']
+    
+    
+@admin.register(Rooms)
+class RoomsAdmin(admin.ModelAdmin):
+    list_display= ['id','room','status']

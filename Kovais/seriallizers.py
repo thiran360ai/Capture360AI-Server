@@ -25,7 +25,7 @@ class UserDetailsSerializer(serializers.ModelSerializer):
 class SaloonOrdersSerializer(serializers.ModelSerializer):
     class Meta:
         model =SaloonOrder
-        fields=  ['username', 'order_type', 'category', 'services', 'payment_status', 'payment_type', 'amount', 'date', 'time', 'created_at']
+        fields=  ['customer_id', 'order_type', 'category', 'services', 'payment_status', 'payment_type', 'amount', 'date', 'time', 'created_at']
         created_at = serializers.SerializerMethodField()
   
 
@@ -33,20 +33,21 @@ class SaloonOrdersSerializer(serializers.ModelSerializer):
 class GymOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model =GymOrder
-        fields=  ['id','customer_id','gender','age','timeslot','status','category','plan','amount','attendance','purchaseddate','expiry_date','created_at']
+        fields=  ['id','customer_id','employee_id','gender','age','timeslot','status','category','plan','amount','attendance','purchaseddate','expiry_date','created_at','payment_status']
         created_at = serializers.SerializerMethodField()
 
 class SpaOrdersSerializer(serializers.ModelSerializer):
     class Meta:
         model =SpaOrder
-        fields=  ['id','username','order_type','category','services','date','time','created_at']
+        fields=  ['id','customer_id','employee_id','category','services','payment_status','payment_type','amount','date','time','created_at','status']
         created_at = serializers.SerializerMethodField()
 
 class HotelOrdersSerializer(serializers.ModelSerializer):
     class Meta:
         model =HotelOrder
-        fields=  ['id','customer_id','amount','category','check_in','check_out','room_count','guest_count','created_at','status']
+        fields=  ['id','customer_id','amount','category','check_in','check_out','room_count','guest_count','created_at','status','payment_status']
         created_at = serializers.SerializerMethodField()
+       
 
 
 class AttendanceSerializer(serializers.ModelSerializer):
@@ -60,7 +61,7 @@ class PresentSerializer(serializers.ModelSerializer):
     employee_name = serializers.SerializerMethodField()
     class Meta:
         model =Attendance
-        fields= ['id','employee','employee_name','status']
+        fields= ['id','employee','employee_name','status','latitude','longitude','check_in','check_out']
 
     def get_employee_name(self, obj):
         return obj.employee.name

@@ -25,7 +25,9 @@ urlpatterns = [
     path('auth/', include('djoser.urls')),  # Keep one set of authentication URLs
     path('auth/jwt/', include('djoser.urls.jwt')),  # Use a different path for JWT authentication
     path('kovais/',include('Kovais.urls')),
-    ]
-# ] + debug_toolbar_urls()
+
+    path('Trust/',include('Trust.urls')),
+] + debug_toolbar_urls()
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

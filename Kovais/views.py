@@ -1,15 +1,18 @@
 import datetime
+from django.db import connection
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework import status
-from django.http import JsonResponse
+from .utils import *
 from django.utils.dateparse import parse_date
 from django.contrib.auth.hashers import make_password, check_password
 from rest_framework.decorators import api_view
 from .seriallizers import *  
 from .models import * 
-import traceback
-import asyncio
+import traceback,requests
+# from asgiref.sync import sync_to_async
+# from rest_framework.decorators import async_api_view
 
 @api_view(['GET'])
 def users(request):
@@ -101,7 +104,9 @@ def Customer_login(request):
 
         if check_password(password, user.password):
             
-            return JsonResponse({'Message': 'login successfully','id':user.id,'username': user.name,'membership':user.membership}, status=status.HTTP_200_OK)
+
+            return JsonResponse({'Message': 'login successfully', 'user_id':user.id,'username': user.name,'membership':user.membership}, status=status.HTTP_200_OK)
+
         else:
             
             return JsonResponse({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
@@ -181,6 +186,17 @@ def create_user_details(request):
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+from django.http import JsonResponse
+from rest_framework.decorators import api_view
+from rest_framework import status
+from django.contrib.auth.hashers import check_password
+from asgiref.sync import sync_to_async
+import traceback
+
+# Assuming you have this defined
+# from .models import Employee  # Replace with your actual model import
+
+
 
 @api_view(['POST'])
 def Emp_login(request):
@@ -214,7 +230,7 @@ def Emp_login(request):
             return JsonResponse({
                 'Message': 'Login successfully',
                 'success': True,  # Set success to True
-                'id':user.id,
+                'user_id':user.id,
                 'username': user.username,
                 'role': user.role
             }, status=status.HTTP_200_OK)
@@ -345,12 +361,14 @@ def post_spa_orders(request):
     - 400 Bad Request: A JSON object with an error message.
     """
     if request.method == 'POST':
-        serializer = SpaOrdersSerializer(data=request.data)
-        
+        serializer = SpaOrdersSerializer(data=request.data)        
         if serializer.is_valid():
-            serializer.save()  # Save the validated data
+            if serializer.validated_data['status'] =="" or "booked":
+                serializer.validated_data['status'] = "Booked"
+            hotel_order =serializer.save()  # Save the validated data
+            customer_username = hotel_order.customer_id.name if hotel_order.customer_id else None
 
-            return Response({'message': 'Order success', 'order': serializer.data}, status=status.HTTP_201_CREATED)
+            return Response({'message': 'Spa Booking success','username': customer_username,'order': serializer.data}, status=status.HTTP_201_CREATED)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -394,44 +412,77 @@ def post_hotel_orders(request):
         if serializer.is_valid():
             if serializer.validated_data['status'] =="" or "booked":
                 serializer.validated_data['status'] = "Booked"
-            serializer.save()  # Save the validated data
+            hotel_order =serializer.save()  # Save the validated data
+            
+            customer_username = hotel_order.customer_id.name if hotel_order.customer_id else None
+            # Rooms.objects.update(room=hotel_order.room_count.id, status='Booked')
+            room_ids = [room.id for room in hotel_order.room_count.all()]
+            Rooms.objects.filter(id__in=room_ids).update(status='Booked')
 
-            return Response({'message': 'Hotel Booking success', 'order': serializer.data}, status=status.HTTP_201_CREATED)
+            return Response({'message': 'Hotel Booking success','username': customer_username,'order': serializer.data}, status=status.HTTP_201_CREATED)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
+
 @api_view(['PUT'])
 def update_hotel_orders(request):
- 
-    """
-    API endpoint to update a specific hotel order record based on customer id.
-
-    Accepts the following parameters in the request body:
-    - status: The status to update the order record with. Accepted values are 'check_in' and 'check_out'.
-    - customer_id: The id of the customer making the request.
-
-    Returns a JSON object with the updated order record details if the update is successful.
-    Returns a JSON object with an error message if the update fails.
-    """
-
     try:
-        param = request.query_params.get('customer_id')
+        customer_param = request.query_params.get('customer_id')
         order_param = request.query_params.get('order_id')
-        hotel = HotelOrder.objects.get(customer_id =param,id=order_param)  # Fetch the specific hotel order record by primary key
+        # Fetch the specific hotel order record by customer_id and order_id
+        hotel = HotelOrder.objects.get(customer_id=customer_param, id=order_param) 
+        print(hotel)  # Debug: Print the fetched hotel order
     except HotelOrder.DoesNotExist:
         return Response({'error': 'Hotel order record not found.'}, status=status.HTTP_404_NOT_FOUND)
-
-    serializer = HotelOrdersSerializer(hotel, data=request.data,partial =True)
+    
+    # Use the existing hotel order instance for updating
+    serializer = HotelOrdersSerializer(hotel, data=request.data)
+    
     if serializer.is_valid():
-        if request.data.get('status')=='check_in':
-            serializer.validated_data['status']='checked_in'
-            serializer.validated_data['check_in'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        if request.data.get('status')=='check_out':
-            serializer.validated_data['status']='checked_out'
-            serializer.validated_data['check_out'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        # Check for the status and update accordingly
+        current_status = serializer.validated_data.get('status', None)
+
+        # Check if the status is 'check_in' and the order is not already checked in
+        if request.data.get('status') == 'check_in':
+            # if current_status == 'checked_in':
+            if hotel.check_in:
+                return Response({'message': 'The booking is already checked in.'}, status=status.HTTP_400_BAD_REQUEST)
+            serializer.validated_data['status'] = 'checked_in'
+            check_in_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            serializer.validated_data['check_in'] = check_in_time
+
+        # Check if the status is 'check_out' and update accordingly
+        if request.data.get('status') == 'check_out':
+            if hotel.check_out:
+                return Response({'message': 'The booking is already checked out.'}, status=status.HTTP_400_BAD_REQUEST)
+            serializer.validated_data['status'] = 'checked_out'
+            check_out_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            serializer.validated_data['check_out'] = check_out_time
+
+        # Ensure check_in is not greater than check_out and not the same time
+        if 'check_in' in serializer.validated_data and 'check_out' in serializer.validated_data:
+            check_in_dt = datetime.strptime(serializer.validated_data['check_in'], '%Y-%m-%d %H:%M:%S')
+            check_out_dt = datetime.strptime(serializer.validated_data['check_out'], '%Y-%m-%d %H:%M:%S')
+
+            if check_in_dt >= check_out_dt:
+                return Response({'message': 'Check-in time cannot be greater than or equal to check-out time.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Save the updated hotel order
+        hotel_order = serializer.save()
+
+        # Retrieve the username from the associated UserDetails model
+        customer_username = hotel_order.customer_id.name if hotel_order.customer_id else None
+
+        # Return success response with the username
+        return Response({
+            'message': 'Hotel Booking updated successfully',
+            'order': serializer.data,
+            'username': customer_username
+        }, status=status.HTTP_200_OK)
+
+    # If the serializer is invalid, return errors
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(['GET'])
 def get_hotel_orders(request):
@@ -445,9 +496,49 @@ def get_hotel_orders(request):
     - 200 OK: A JSON object with the list of all hotel orders.
     """
 
-    orders = HotelOrder.objects.all()
-    serializer = HotelOrdersSerializer(orders, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    try:
+        # Fetch data asynchronously
+        orders = HotelOrder.objects.all()
+        # Serialize the data
+        serializer = HotelOrdersSerializer(orders, many=True)
+        # Return the serialized data as a response
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Exception as e:
+        # Handle any errors
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+  
+
+
+
+
+@api_view(['GET'])
+def get_orders(request):
+    with connection.cursor() as cursor:
+        cursor.execute('SELECT * FROM building.kovais_hotelorder')
+        rows = cursor.fetchall()
+    orders = []
+    for row in rows:
+        orders.append({
+            'id': row[0],   # Assuming id is the first column in your result
+            'order_number': row[1],  # Adjust column indexes based on your query
+            'customer_name': row[2],
+            'order_date': row[3],
+            # Add other columns as needed
+        })
+    
+    # Return the orders as a JSON response
+    return Response(orders)
+
+    # orders = await get_orders_from_db() 
+    # serializer = HotelOrdersSerializer(orders, many=True)
+    # # Return the serialized data as a response
+    # return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    
+@api_view(['GET'])
+def get_room_count(request):
+    available_rooms_count = Rooms.objects.filter(status='Available').count()
+    return Response({'available_rooms_count': available_rooms_count}, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
 def get_hotel_order_status(request):
@@ -464,7 +555,7 @@ def get_hotel_order_status(request):
     
     try:
         print(status)
-        order = HotelOrder.objects.filter(status=status_param)
+        order = HotelOrder.objects.filter(status=status_param).all()
         if not order.exists():
             return Response({'message': 'No hotel orders found for the given status.'}, status=status.HTTP_404_NOT_FOUND)
         serializer =HotelOrdersSerializer(order,many=True)
@@ -566,7 +657,7 @@ def create_attendance(request):
             'check_in': check_in_time,
             'status': 'check in'
         }
-      
+
         serializer = AttendanceSerializer(data=attendance_data)
         if serializer.is_valid():
             serializer.save()
@@ -714,9 +805,7 @@ def get_payment_status(request):
         return Response({'error': 'Hotel order record not found.'}, status=status.HTTP_404_NOT_FOUND)
 
     serializer = HotelOrdersSerializer(hotel, data=request.data,partial =True)
-    if serializer.is_valid():
-        if request.data.get('payment_status')=='paid':
-            serializer.validated_data['payment_status']='paid'
-            serializer.save()
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    
+    return Response(serializer.data, status=status.HTTP_200_OK)
+

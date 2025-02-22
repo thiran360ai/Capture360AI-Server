@@ -104,7 +104,9 @@ def Customer_login(request):
 
         if check_password(password, user.password):
             
+
             return JsonResponse({'Message': 'login successfully', 'user_id':user.id,'username': user.name,'membership':user.membership}, status=status.HTTP_200_OK)
+
         else:
             
             return JsonResponse({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
@@ -803,5 +805,7 @@ def get_payment_status(request):
         return Response({'error': 'Hotel order record not found.'}, status=status.HTTP_404_NOT_FOUND)
 
     serializer = HotelOrdersSerializer(hotel, data=request.data,partial =True)
+
     
     return Response(serializer.data, status=status.HTTP_200_OK)
+

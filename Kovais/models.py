@@ -12,7 +12,7 @@ class Employee(AbstractUser):
         ('gym', 'Gym'),
         ('hotel', 'Hotel')
     )
-
+    email =models.CharField(max_length=255,null=True,blank=True,unique=True)
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='member')
     mobile = models.CharField(max_length=255, null=True, blank=True)
     location = models.CharField(max_length=255, blank=True, null=True)
@@ -68,7 +68,8 @@ class Booking(models.Model):
     
 
 class SaloonOrder(models.Model):
-    customer_id =models.ForeignKey(UserDetails,on_delete=models.CASCADE)
+    customer_id =models.ForeignKey(UserDetails,on_delete=models.CASCADE,null=True,blank=True)
+    employee_id =models.ForeignKey(Employee,on_delete=models.CASCADE,null=True,blank=True)
     order_type = models.CharField(max_length=255,null=True,blank=True)
     category=models.CharField(max_length=255,null=True,blank=True)
     services=models.TextField(null=True,blank=True)
@@ -84,6 +85,7 @@ class SaloonOrder(models.Model):
 
 class GymOrder(models.Model):
     customer_id=models.ForeignKey(UserDetails, on_delete=models.CASCADE,null=True,blank=True)
+    employee_id =models.ForeignKey(Employee,on_delete=models.CASCADE,null=True,blank=True)
     gender=models.CharField(max_length=255,null=True,blank=True)
     age = models.CharField(max_length=255,null=True,blank=True)
     timeslot=models.CharField(max_length=255,null=True,blank=True)
@@ -99,8 +101,9 @@ class GymOrder(models.Model):
 
 
 class SpaOrder(models.Model):
-    customer_id =models.ForeignKey(UserDetails,on_delete=models.CASCADE)
-    order_type = models.CharField(max_length=255,null=True,blank=True)
+    customer_id =models.ForeignKey(UserDetails,on_delete=models.CASCADE,null=True,blank=True)
+    employee_id =models.ForeignKey(Employee,on_delete=models.CASCADE,null=True,blank=True)
+    # order_type = models.CharField(max_length=255,null=True,blank=True)
     category=models.CharField(max_length=255,null=True,blank=True)
     services=models.TextField(null=True,blank=True)
     date=models.DateField(null=True,blank=True)
@@ -109,17 +112,23 @@ class SpaOrder(models.Model):
     payment_status=models.CharField(max_length=255,null=True,blank=True,default='pending')
     payment_type=models.CharField(max_length=255,null=True,blank=True)
     created_at =models.DateTimeField(auto_now_add=True)
+    status =models.CharField(max_length=255,null=True,blank=True)
 
-class HotelOrder(models.Model):
-    customer_id =models.ForeignKey(UserDetails,on_delete=models.CASCADE)
+class Rooms(models.Model):
+    room = models.IntegerField(unique=True,null=True,blank=True)
+    status = models.CharField(max_length=255,null=True,blank=True,default='Available')
+class HotelOrder(models.Model):  
+    customer_id =models.ForeignKey(UserDetails,on_delete=models.CASCADE,null=True,blank=True)
+    employee_id =models.ForeignKey(Employee,on_delete=models.CASCADE,null=True,blank=True)
     guest_name =models.CharField(max_length=255,null=True,blank=True)
     amount = models.CharField(max_length=255,null=True,blank=True)
     check_in = models.DateTimeField(null=True, blank=True)
     check_out = models.DateTimeField(null=True, blank=True)
     category=models.CharField(max_length=255,null=True,blank=True)
-    room_count=models.CharField(max_length=255,null=True,blank=True,default=10)
+    # Many-to-many relationship with Rooms to allow multiple rooms per booking
+    room_count = models.ManyToManyField(Rooms, blank=True)
     guest_count=models.CharField(max_length=255,null=True,blank=True)
-    status = models.CharField(max_length=255,null=True,blank=True)
+    status = models.CharField(max_length=255,null=True,blank=True,default='Available')
     payment_status=models.CharField(max_length=255,null=True,blank=True,default='pending')
     created_at =models.DateTimeField(auto_now_add=True)
     

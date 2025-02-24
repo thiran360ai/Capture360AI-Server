@@ -11,8 +11,16 @@ from rest_framework.decorators import api_view
 from .seriallizers import *  
 from .models import * 
 import traceback,requests
-# from asgiref.sync import sync_to_async
-# from rest_framework.decorators import async_api_view
+from asgiref.sync import sync_to_async, async_to_sync
+from rest_framework.decorators import APIView
+
+
+class AsyncUserList(APIView):
+    async def get(self, request):
+        users = await sync_to_async(lambda: list(UserDetails.objects.all()))()
+        serializer = await sync_to_async(lambda: UserDetailsSerializer(users, many=True).data)()
+        return Response(serializer)
+
 
 @api_view(['GET'])
 def users(request):
@@ -62,7 +70,6 @@ def create_Employee(request):
             return Response({'message': 'User created successfully', 'user': serializer.data['username'],'success':serializer.data['success']}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    
     elif request.method == 'GET':
         # Return a response for GET request if needed
         # Example: Return a list of employees (or whatever data makes sense for your app)
@@ -74,9 +81,42 @@ def create_Employee(request):
     return Response({'message': 'Method Not Allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
+@api_view(['PUT'])
+def update_employee(request):
+    employee_id = request.query_params.get('employee_id')
+
+    if not employee_id or not employee_id.isdigit():
+        return Response({'error': 'Valid user_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    user = get_object_or_404(Employee, id=int(employee_id))
+    serializer = EmployeeSerializer(user, data=request.data, partial=True)
+
+    if serializer.is_valid():
+        if 'password' in serializer.validated_data:
+            serializer.validated_data['password'] = make_password(serializer.validated_data['password'])
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['DELETE'])
+def delete_employee(request):
+    try:
+        employee_id = request.query_params.get('employee_id')
+
+        if not employee_id or not employee_id.isdigit():
+            return Response({'error': 'Valid user_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        employee = Employee.objects.get(id=employee_id)
+        employee.delete()
+        return Response({'message': 'User deleted successfully'}, status=status.HTTP_200_OK)
+    except Employee.DoesNotExist:
+        return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
 
 @api_view(['POST'])
-def Customer_login(request):
+def customer_login(request):
     """
     API endpoint for customer login.
 
@@ -417,7 +457,7 @@ def post_hotel_orders(request):
             room_ids = [room.id for room in hotel_order.room_count.all()]
             Rooms.objects.filter(id__in=room_ids).update(status='Booked')
 
-            return Response({'message': 'Hotel Booking success','username': customer_username,'order': serializer.data}, status=status.HTTP_201_CREATED)
+            return Response({'message': 'Hotel Booking success', 'username': customer_username, 'order': serializer.data}, status=status.HTTP_201_CREATED)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -538,6 +578,37 @@ def get_room_count(request):
     available_rooms_count = Rooms.objects.filter(status='Available').count()
     return Response({'available_rooms_count': available_rooms_count}, status=status.HTTP_200_OK)
 
+
+@api_view(['GET'])
+def get_order_by_id_and_date(request):
+    employee_id = request.query_params.get('employee_id')
+    date = request.query_params.get('date')  # Expecting 'YYYY-MM-DD' format
+
+    # Validate employee_id
+    if not employee_id or not employee_id.isdigit():
+        return Response({'error': 'Valid employee_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Validate date
+    if not date:
+        return Response({'error': 'Date is required in YYYY-MM-DD format'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        # Filter by employee_id and order_date
+        orders = HotelOrder.objects.filter(
+            employee_id=employee_id,
+            order_date=date
+        )
+
+        if not orders.exists():
+            return Response({'error': 'No orders found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Serialize multiple orders if needed
+        serializer = HotelOrdersSerializer(orders, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 @api_view(['GET'])
 def get_hotel_order_status(request):
     """
@@ -549,7 +620,7 @@ def get_hotel_order_status(request):
     Returns a JSON object with the list of hotel orders if the fetch is successful.
     Returns a JSON object with an error message if the fetch fails.
     """
-    status_param = request.query_params.get('status', None).lower()
+    status_param = request.query_params.get('status', None)
     
     try:
         print(status)

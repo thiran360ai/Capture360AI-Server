@@ -38,7 +38,7 @@ SECRET_KEY = 'django-insecure-qy99_@e#dcu^cbt$=dazit$_*)5yz*)f_6cmkpxu9r-a9)iq90
 # DEBUG = True
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1','api.capture360.ai', '262c-59-97-51-97.ngrok-free.app','192.168.1.55','192.168.1.36','59.97.51.97','192.168.1.33','c432-59-97-51-97.ngrok-free.app','capture360.ai','www.capture360.9ai',]
+ALLOWED_HOSTS = ['localhost', '127.0.0.1','api.capture360.ai', 'd988-59-97-51-97.ngrok-free.app','192.168.1.55','192.168.1.36','59.97.51.97','192.168.1.33','c432-59-97-51-97.ngrok-free.app','capture360.ai','www.capture360.9ai',]
 
 CORS_ALLOW_HEADERS = [
     'Accept',
@@ -57,7 +57,7 @@ CORS_ALLOW_HEADERS = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    'https://262c-59-97-51-97.ngrok-free.app',
+    'https://d988-59-97-51-97.ngrok-free.app',
     'http://192.168.1.33:8080',
     'https://api.capture360.ai',
     'http://api.capture360.ai',
@@ -93,8 +93,11 @@ CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins to simplify CORS configuratio
 LOGIN_REDIRECT_URL = '/dashboard/'  # Redirect users after login
 APPEND_SLASH = False
 
-
-
+# Rest_framework time settings
+REST_FRAMEWORK = {
+    'DATETIME_FORMAT': "%Y-%m-%d %H:%M",
+    'TIME_ZONE': 'Asia/Kolkata',
+}
 
 # Application definition
 
@@ -106,12 +109,13 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'profile_utility',
+    #'profile_utility',
     'Kovais',
-#     'djoser',
+    # 'djoser',
     'corsheaders',
     'debug_toolbar',
     'Trust',
+    'Attendance',
 ]
 
 MIDDLEWARE = [
@@ -207,7 +211,7 @@ TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)

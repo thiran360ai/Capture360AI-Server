@@ -165,5 +165,7 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-profile_utility/migrations/
-Kovais/migrations/
+../profile_utility/migrations/
+../Kovais/migrations/
+../Attendance/migrations/
+../Trust/migrations/

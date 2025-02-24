@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractUser
 from django.forms import ValidationError
 # Create your models here.
 
+
 class Employee(AbstractUser):
     ROLE_CHOICES = (
         ('admin', 'Admin'),
@@ -12,7 +13,8 @@ class Employee(AbstractUser):
         ('gym', 'Gym'),
         ('hotel', 'Hotel')
     )
-    email =models.CharField(max_length=255,null=True,blank=True,unique=True)
+
+    email = models.CharField(max_length=255,null=True,blank=True,unique=True)
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='member')
     mobile = models.CharField(max_length=255, null=True, blank=True)
     location = models.CharField(max_length=255, blank=True, null=True)
@@ -37,6 +39,7 @@ class Employee(AbstractUser):
         related_query_name='employee',
     )
 
+
 class UserDetails(models.Model):
     MEMBERSHIP_CHOICES = (
         ('silver', 'Silver'),
@@ -51,68 +54,66 @@ class UserDetails(models.Model):
 
     def __str__(self):
         return self.name
-  
 
     
 class Bonus(models.Model):
     name =models.ForeignKey(Employee,on_delete=models.CASCADE)
     points=models.CharField(max_length=256,null=True,blank=True)
     is_active = models.BooleanField(default=True)
-    
-class Booking(models.Model):
-    customer_id=models.ForeignKey(UserDetails, on_delete=models.CASCADE)
-    employee_id=models.ForeignKey(Employee, on_delete=models.CASCADE)
-    time_slot=models.DateTimeField(auto_now=True)
-    bonus=models.ForeignKey(Bonus,on_delete=models.CASCADE)
 
-    
+
+class Booking(models.Model):
+    customer_id = models.ForeignKey(UserDetails, on_delete=models.CASCADE)
+    employee_id = models.ForeignKey(Employee, on_delete=models.CASCADE)
+    time_slot = models.DateTimeField(auto_now=True)
+    bonus = models.ForeignKey(Bonus,on_delete=models.CASCADE)
+
 
 class SaloonOrder(models.Model):
-    customer_id =models.ForeignKey(UserDetails,on_delete=models.CASCADE,null=True,blank=True)
-    employee_id =models.ForeignKey(Employee,on_delete=models.CASCADE,null=True,blank=True)
+    customer_id = models.ForeignKey(UserDetails,on_delete=models.CASCADE,null=True,blank=True)
+    employee_id = models.ForeignKey(Employee,on_delete=models.CASCADE,null=True,blank=True)
     order_type = models.CharField(max_length=255,null=True,blank=True)
-    category=models.CharField(max_length=255,null=True,blank=True)
-    services=models.TextField(null=True,blank=True)
-    payment_status=models.CharField(max_length=255,null=True,blank=True,default='pending')
-    payment_type=models.CharField(max_length=255,null=True,blank=True)
-    amount=models.CharField(max_length=255,null=True,blank=True)
-    date=models.DateField(null=True,blank=True)
-    time=models.CharField(max_length=255,null=True,blank=True)
-    created_at =models.DateTimeField(auto_now_add=True)
-    status=models.CharField(max_length=255,null=True,blank=True)
+    category = models.CharField(max_length=255,null=True,blank=True)
+    services = models.TextField(null=True,blank=True)
+    payment_status = models.CharField(max_length=255,null=True,blank=True,default='pending')
+    payment_type = models.CharField(max_length=255,null=True,blank=True)
+    amount = models.CharField(max_length=255,null=True,blank=True)
+    date = models.DateField(null=True,blank=True)
+    time = models.CharField(max_length=255,null=True,blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=255,null=True,blank=True)
 
-    
 
 class GymOrder(models.Model):
-    customer_id=models.ForeignKey(UserDetails, on_delete=models.CASCADE,null=True,blank=True)
-    employee_id =models.ForeignKey(Employee,on_delete=models.CASCADE,null=True,blank=True)
-    gender=models.CharField(max_length=255,null=True,blank=True)
+    customer_id = models.ForeignKey(UserDetails, on_delete=models.CASCADE,null=True,blank=True)
+    employee_id = models.ForeignKey(Employee,on_delete=models.CASCADE,null=True,blank=True)
+    gender = models.CharField(max_length=255,null=True,blank=True)
     age = models.CharField(max_length=255,null=True,blank=True)
-    timeslot=models.CharField(max_length=255,null=True,blank=True)
-    status=models.CharField(max_length=255,null=True,blank=True)
-    plan=models.CharField(max_length=255,null=True,blank=True)
-    attendance=models.CharField(max_length=255,null=True,blank=True)
-    category=models.CharField(max_length=255,null=True,blank=True)
-    amount=models.TextField(null=True,blank=True)
-    purchaseddate=models.TextField(null=True,blank=True)
+    timeslot = models.CharField(max_length=255,null=True,blank=True)
+    status = models.CharField(max_length=255,null=True,blank=True)
+    plan = models.CharField(max_length=255,null=True,blank=True)
+    attendance = models.CharField(max_length=255,null=True,blank=True)
+    category = models.CharField(max_length=255,null=True,blank=True)
+    amount = models.TextField(null=True,blank=True)
+    purchaseddate = models.TextField(null=True,blank=True)
     expiry_date = models.TextField(null=True,blank=True)
-    payment_status=models.CharField(max_length=255,null=True,blank=True,default='pending')
-    created_at =models.DateTimeField(auto_now_add=True)
+    payment_status = models.CharField(max_length=255,null=True,blank=True,default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
 
 
 class SpaOrder(models.Model):
-    customer_id =models.ForeignKey(UserDetails,on_delete=models.CASCADE,null=True,blank=True)
-    employee_id =models.ForeignKey(Employee,on_delete=models.CASCADE,null=True,blank=True)
+    customer_id = models.ForeignKey(UserDetails,on_delete=models.CASCADE,null=True,blank=True)
+    employee_id = models.ForeignKey(Employee,on_delete=models.CASCADE,null=True,blank=True)
     # order_type = models.CharField(max_length=255,null=True,blank=True)
-    category=models.CharField(max_length=255,null=True,blank=True)
-    services=models.TextField(null=True,blank=True)
-    date=models.DateField(null=True,blank=True)
-    time=models.CharField(max_length=255,null=True,blank=True)
-    amount=models.TextField(null=True,blank=True)
-    payment_status=models.CharField(max_length=255,null=True,blank=True,default='pending')
-    payment_type=models.CharField(max_length=255,null=True,blank=True)
-    created_at =models.DateTimeField(auto_now_add=True)
-    status =models.CharField(max_length=255,null=True,blank=True)
+    category = models.CharField(max_length=255,null=True,blank=True)
+    services = models.TextField(null=True,blank=True)
+    date = models.DateField(null=True,blank=True)
+    time = models.CharField(max_length=255,null=True,blank=True)
+    amount = models.TextField(null=True,blank=True)
+    payment_status = models.CharField(max_length=255,null=True,blank=True,default='pending')
+    payment_type = models.CharField(max_length=255,null=True,blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=255,null=True,blank=True)
 
 class Rooms(models.Model):
     room = models.IntegerField(unique=True,null=True,blank=True)

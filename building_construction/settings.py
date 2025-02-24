@@ -115,7 +115,7 @@ INSTALLED_APPS = [
 #     'djoser',
     'corsheaders',
     'debug_toolbar',
-    'Trust',
+#     'Trust',
 ]
 
 MIDDLEWARE = [

@@ -25,6 +25,7 @@ urlpatterns = [
     path('auth/', include('djoser.urls')),  # Keep one set of authentication URLs
     path('auth/jwt/', include('djoser.urls.jwt')),  # Use a different path for JWT authentication
     path('kovais/',include('Kovais.urls')),
+    path('tiran_attendance/',include('Attendance.urls')),
 
 #     path('Trust/',include('Trust.urls')),
 # ] + debug_toolbar_urls()

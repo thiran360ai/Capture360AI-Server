@@ -114,8 +114,10 @@ INSTALLED_APPS = [
     'Kovais',
 #     'djoser',
     'corsheaders',
-    'debug_toolbar',
-#     'Trust',
+    # 'debug_toolbar',
+    # 'Trust',
+
+    'Attendance'
 ]
 
 MIDDLEWARE = [

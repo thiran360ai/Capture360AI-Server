@@ -117,9 +117,10 @@ class SpaOrder(models.Model):
 class Rooms(models.Model):
     room = models.IntegerField(unique=True,null=True,blank=True)
     status = models.CharField(max_length=255,null=True,blank=True,default='Available')
+
 class HotelOrder(models.Model):  
-    customer_id =models.ForeignKey(UserDetails,on_delete=models.CASCADE,null=True,blank=True)
-    employee_id =models.ForeignKey(Employee,on_delete=models.CASCADE,null=True,blank=True)
+    customer =models.ForeignKey(UserDetails,on_delete=models.CASCADE,null=True,blank=True)
+    employee =models.ForeignKey(Employee,on_delete=models.CASCADE,null=True,blank=True)
     guest_name =models.CharField(max_length=255,null=True,blank=True)
     amount = models.CharField(max_length=255,null=True,blank=True)
     check_in = models.DateTimeField(null=True, blank=True)

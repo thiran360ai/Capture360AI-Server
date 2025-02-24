@@ -43,3 +43,6 @@ websockets==9.1
 python-decouple==3.8
 caniusepython3==7.0.0
 PyMySQL==1.1.1
+celery==5.2.7
+django-debug-toolbar
+pywhatkit

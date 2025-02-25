@@ -65,7 +65,6 @@ class Booking(models.Model):
     time_slot=models.DateTimeField(auto_now=True)
     bonus=models.ForeignKey(Bonus,on_delete=models.CASCADE)
 
-    
 
 class SaloonOrder(models.Model):
     customer_id =models.ForeignKey(UserDetails,on_delete=models.CASCADE,null=True,blank=True)

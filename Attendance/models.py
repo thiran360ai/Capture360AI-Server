@@ -4,6 +4,7 @@ from django.utils import timezone
 
 
 class User(models.Model):
+    username = models.CharField(max_length=150, unique=True)
     ROLE_CHOICES = (
         ('admin', 'Admin'),
         ('member', 'Member'),
@@ -22,6 +23,7 @@ class User(models.Model):
         if not self.profileStatus or self.profileStatus.strip() == "":
             self.profileStatus = "not completed"
         super().save(*args, **kwargs)
+
 
 
 class Attendance(models.Model):

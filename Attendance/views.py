@@ -22,7 +22,7 @@ class AttendanceAPIView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         print(action)
         device_id = serializer.validated_data['device_id']
-
+        print(device_id)
         if action == 'start':
             previous_attendance = Attendance.objects.filter(
                 device_id=device_id, stop_time__isnull=True, pause_time__isnull=True

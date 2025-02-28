@@ -26,8 +26,8 @@ py-localtunnel==1.0.3
 pycparser==2.22
 Pygments==2.18.0
 PyJWT==2.8.0
-mysqlclient==2.1.1
-scipy==1.9.3
+mysqlclient==2.2.7
+scipy==1.15.1
 python3-openid==3.2.0
 requests==2.32.3
 requests-oauthlib==2.0.0
@@ -45,4 +45,5 @@ caniusepython3==7.0.0
 PyMySQL==1.1.1
 celery==5.2.7
 django-debug-toolbar
-pywhatkit
+pywhatkit==5.4
+numpy==2.2.3

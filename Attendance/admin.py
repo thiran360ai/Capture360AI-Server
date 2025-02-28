@@ -11,3 +11,4 @@ class UserAdmin(admin.ModelAdmin):
 @admin.register(Attendance)
 class AttendanceAdmin(admin.ModelAdmin):
     list_display = ['user_id','device_id','month','year','start_time','pause_time','resume_time','stop_time','total_hours']
+

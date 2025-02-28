@@ -114,7 +114,7 @@ INSTALLED_APPS = [
 #     'djoser',
     'corsheaders',
     'debug_toolbar',
-    'Trust',
+    # 'Trust',
     'Attendance',
     'import_export'
 ]

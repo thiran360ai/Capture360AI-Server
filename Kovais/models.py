@@ -80,7 +80,6 @@ class SaloonOrder(models.Model):
     created_at =models.DateTimeField(auto_now_add=True)
     status=models.CharField(max_length=255,null=True,blank=True)
 
-    
 
 class GymOrder(models.Model):
     customer_id=models.ForeignKey(UserDetails, on_delete=models.CASCADE,null=True,blank=True)
@@ -100,33 +99,35 @@ class GymOrder(models.Model):
 
 
 class SpaOrder(models.Model):
-    customer_id =models.ForeignKey(UserDetails,on_delete=models.CASCADE,null=True,blank=True)
-    employee_id =models.ForeignKey(Employee,on_delete=models.CASCADE,null=True,blank=True)
+    customer_id = models.ForeignKey(UserDetails,on_delete=models.CASCADE,null=True,blank=True)
+    employee_id = models.ForeignKey(Employee,on_delete=models.CASCADE,null=True,blank=True)
     # order_type = models.CharField(max_length=255,null=True,blank=True)
-    category=models.CharField(max_length=255,null=True,blank=True)
-    services=models.TextField(null=True,blank=True)
-    date=models.DateField(null=True,blank=True)
-    time=models.CharField(max_length=255,null=True,blank=True)
-    amount=models.TextField(null=True,blank=True)
-    payment_status=models.CharField(max_length=255,null=True,blank=True,default='pending')
-    payment_type=models.CharField(max_length=255,null=True,blank=True)
-    created_at =models.DateTimeField(auto_now_add=True)
-    status =models.CharField(max_length=255,null=True,blank=True)
+    category = models.CharField(max_length=255, null=True, blank=True)
+    services = models.TextField(null=True, blank=True)
+    date = models.DateField(null=True, blank=True)
+    time = models.CharField(max_length=255, null=True, blank=True)
+    amount = models.TextField(null=True, blank=True)
+    payment_status = models.CharField(max_length=255, null=True, blank=True, default='pending')
+    payment_type = models.CharField(max_length=255, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=255, null=True, blank=True)
+
 
 class Rooms(models.Model):
     room = models.IntegerField(unique=True,null=True,blank=True)
     status = models.CharField(max_length=255,null=True,blank=True,default='Available')
 
+
 class HotelOrder(models.Model):  
-    customer =models.ForeignKey(UserDetails,on_delete=models.CASCADE,null=True,blank=True)
-    employee =models.ForeignKey(Employee,on_delete=models.CASCADE,null=True,blank=True)
+    customer_id =models.ForeignKey(UserDetails,on_delete=models.CASCADE,null=True,blank=True)
+    employee_id =models.ForeignKey(Employee,on_delete=models.CASCADE,null=True,blank=True)
     guest_name =models.CharField(max_length=255,null=True,blank=True)
     amount = models.CharField(max_length=255,null=True,blank=True)
     check_in = models.DateTimeField(null=True, blank=True)
     check_out = models.DateTimeField(null=True, blank=True)
     category=models.CharField(max_length=255,null=True,blank=True)
     # Many-to-many relationship with Rooms to allow multiple rooms per booking
-    room_count = models.ManyToManyField(Rooms, blank=True)
+    room_count = models.CharField(max_length=255,null=True,blank=True)
     guest_count=models.CharField(max_length=255,null=True,blank=True)
     status = models.CharField(max_length=255,null=True,blank=True,default='Available')
     payment_status=models.CharField(max_length=255,null=True,blank=True,default='pending')
@@ -136,6 +137,7 @@ class HotelOrder(models.Model):
         if self.check_in and self.check_out:
             if self.check_out <= self.check_in:
                 raise ValidationError({'check_out': 'Check-out date must be later than check-in date.'})
+
 
 class Attendance(models.Model):
     employee_attendance = models.ForeignKey(

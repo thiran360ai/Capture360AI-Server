@@ -39,7 +39,7 @@ SECRET_KEY = 'django-insecure-qy99_@e#dcu^cbt$=dazit$_*)5yz*)f_6cmkpxu9r-a9)iq90
 DEBUG = True
 
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1','api.capture360.ai', '262c-59-97-51-97.ngrok-free.app','192.168.1.55','192.168.1.36','59.97.51.97','192.168.1.33','c432-59-97-51-97.ngrok-free.app','capture360.ai','www.capture360.9ai',]
+ALLOWED_HOSTS = ['localhost', '127.0.0.1','api.capture360.ai', '74c2-59-97-51-97.ngrok-free.app','192.168.1.55','192.168.1.36','59.97.51.97','192.168.1.33','c432-59-97-51-97.ngrok-free.app','capture360.ai','www.capture360.9ai',]
 
 
 CORS_ALLOW_HEADERS = [
@@ -60,8 +60,7 @@ CORS_ALLOW_HEADERS = [
 
 CORS_ALLOWED_ORIGINS = [
 
-    'https://262c-59-97-51-97.ngrok-free.app',
-
+    'https://74c2-59-97-51-97.ngrok-free.app',
     'http://192.168.1.33:8080',
     'https://api.capture360.ai',
     'http://api.capture360.ai',
@@ -114,10 +113,10 @@ INSTALLED_APPS = [
     'Kovais',
 #     'djoser',
     'corsheaders',
-    # 'debug_toolbar',
-    # 'Trust',
-
-    'Attendance'
+    'debug_toolbar',
+    'Trust',
+    'Attendance',
+    'import_export'
 ]
 
 MIDDLEWARE = [
@@ -129,7 +128,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
-#     "debug_toolbar.middleware.DebugToolbarMiddleware",
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
 ]
 
 ROOT_URLCONF = 'building_construction.urls'

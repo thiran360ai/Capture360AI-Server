@@ -7,3 +7,5 @@ python manage.py migrate
 
 echo "Starting the server..."
 exec "$@"
+
+

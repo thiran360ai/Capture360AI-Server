@@ -25,7 +25,6 @@ class User(models.Model):
         super().save(*args, **kwargs)
 
 
-
 class Attendance(models.Model):
     user_id = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     device_id = models.CharField(max_length=255, null=True, blank=True)

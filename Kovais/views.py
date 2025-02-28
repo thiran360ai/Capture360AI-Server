@@ -1,5 +1,6 @@
 import datetime
 from django.db import connection
+from django.db.models.functions import TruncDate
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
@@ -11,8 +12,16 @@ from rest_framework.decorators import api_view
 from .seriallizers import *  
 from .models import * 
 import traceback,requests
-# from asgiref.sync import sync_to_async
-# from rest_framework.decorators import async_api_view
+from asgiref.sync import sync_to_async, async_to_sync
+from rest_framework.decorators import APIView
+
+
+class AsyncUserList(APIView):
+    async def get(self, request):
+        users = await sync_to_async(lambda: list(UserDetails.objects.all()))()
+        serializer = await sync_to_async(lambda: UserDetailsSerializer(users, many=True).data)()
+        return Response(serializer)
+
 
 @api_view(['GET'])
 def users(request):
@@ -62,7 +71,6 @@ def create_Employee(request):
             return Response({'message': 'User created successfully', 'user': serializer.data['username'],'success':serializer.data['success']}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    
     elif request.method == 'GET':
         # Return a response for GET request if needed
         # Example: Return a list of employees (or whatever data makes sense for your app)
@@ -74,9 +82,59 @@ def create_Employee(request):
     return Response({'message': 'Method Not Allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
+@api_view(['PUT'])
+def update_employee(request):
+    """
+    API endpoint to update an existing employee.
+
+    Accepts the following parameters in the request query parameters:
+    - employee_id: The id of the employee to update.
+
+    Accepts the following parameters in the request body:
+    - username: The username of the employee.
+    - password: The password of the employee.
+    - mobile: The mobile number of the employee.
+    - email: The email of the employee.
+    - role: The role of the employee.
+    - location: The location of the employee.
+
+    Returns a JSON object with the updated employee details if the update is successful.
+    Returns a JSON object with an error message if the update fails.
+    """
+    employee_id = request.query_params.get('employee_id')
+
+    if not employee_id or not employee_id.isdigit():
+        return Response({'error': 'Valid user_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    user = get_object_or_404(Employee, id=int(employee_id))
+    serializer = EmployeeSerializer(user, data=request.data, partial=True)
+
+    if serializer.is_valid():
+        if 'password' in serializer.validated_data:
+            serializer.validated_data['password'] = make_password(serializer.validated_data['password'])
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['DELETE'])
+def delete_employee(request):
+    try:
+        employee_id = request.query_params.get('employee_id')
+
+        if not employee_id or not employee_id.isdigit():
+            return Response({'error': 'Valid user_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        employee = Employee.objects.get(id=employee_id)
+        employee.delete()
+        return Response({'message': 'User deleted successfully'}, status=status.HTTP_200_OK)
+    except Employee.DoesNotExist:
+        return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
 
 @api_view(['POST'])
-def Customer_login(request):
+def customer_login(request):
     """
     API endpoint for customer login.
 
@@ -99,18 +157,13 @@ def Customer_login(request):
         try:
             user = UserDetails.objects.get(name=username)
         except UserDetails.DoesNotExist:
-            
             return JsonResponse({'login': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
-
         if check_password(password, user.password):
-            
-
             return JsonResponse({'Message': 'login successfully', 'user_id':user.id,'username': user.name,'membership':user.membership}, status=status.HTTP_200_OK)
-
         else:
-            
             return JsonResponse({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
     except Exception as e:
+
             # Print the full traceback to debug the issue
         traceback.print_exc()
         return JsonResponse({'error': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -322,6 +375,43 @@ def post_gym_orders(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
+@api_view(['PUT'])
+def update_gym_orders(request):
+    try:
+        customer_param = request.query_params.get('customer_id')
+        order_param = request.query_params.get('order_id')
+        # Fetch the specific hotel order record by customer_id and order_id
+        gym = GymOrder.objects.get(customer_id=customer_param, id=order_param)
+        print(gym)  # Debug: Print the fetched hotel order
+    except GymOrder.DoesNotExist:
+        return Response({'error': 'Hotel order record not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Use the existing hotel order instance for updating
+    serializer = GymOrderSerializer(gym, data=request.data, partial=True)
+
+    if serializer.is_valid():
+        # Check for the status and update accordingly
+
+        if request.data.get('payment_status') == 'paid':
+            serializer.validated_data['payment_status'] = 'Completed'
+
+        # Save the updated hotel order
+        gym_order = serializer.save()
+
+        # Retrieve the username from the associated UserDetails model
+        customer_username = gym_order.customer_id.name if gym_order.customer_id else None
+
+        # Return success response with the username
+        return Response({
+            'message': 'Gym Order updated successfully',
+            'order': serializer.data,
+            'username': customer_username
+        }, status=status.HTTP_200_OK)
+
+    # If the serializer is invalid, return errors
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 @api_view(['GET'])
 def get_gym_orders(request):
     """
@@ -363,9 +453,11 @@ def post_spa_orders(request):
     if request.method == 'POST':
         serializer = SpaOrdersSerializer(data=request.data)        
         if serializer.is_valid():
-            if serializer.validated_data['status'] =="" or "booked":
+            if serializer.validated_data['status'] == "" or "booked":
                 serializer.validated_data['status'] = "Booked"
-            hotel_order =serializer.save()  # Save the validated data
+            # if serializer.validated_data['payment_type'] == "Credit Card" or "Credit Card":
+            #     serializer.validated_data['payment_type'] = "paid"
+            hotel_order = serializer.save()  # Save the validated data
             customer_username = hotel_order.customer_id.name if hotel_order.customer_id else None
 
             return Response({'message': 'Spa Booking success','username': customer_username,'order': serializer.data}, status=status.HTTP_201_CREATED)
@@ -389,39 +481,106 @@ def get_spa_orders(request):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+@api_view(['PUT'])
+def update_spa_orders(request):
+    try:
+        customer_param = request.query_params.get('customer_id')
+        order_param = request.query_params.get('order_id')
+        # Fetch the specific hotel order record by customer_id and order_id
+        spa = SpaOrder.objects.get(customer_id=customer_param, id=order_param)
+        print(spa)  # Debug: Print the fetched hotel order
+    except SpaOrder.DoesNotExist:
+        return Response({'error': 'Hotel order record not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-@api_view(['POST'])
-def post_hotel_orders(request):
+    # Use the existing hotel order instance for updating
+    serializer = SpaOrdersSerializer(spa, data=request.data, partial=True)
+
+    if serializer.is_valid():
+        # Check for the status and update accordingly
+
+        if request.data.get('payment_status') == 'paid':
+            serializer.validated_data['payment_status'] = 'Completed'
+
+        # Save the updated hotel order
+        spa_order = serializer.save()
+
+        # Retrieve the username from the associated UserDetails model
+        customer_username = spa_order.customer_id.name if spa_order.customer_id else None
+
+        # Return success response with the username
+        return Response({
+            'message': 'Spa Order updated successfully',
+            'order': serializer.data,
+            'username': customer_username
+        }, status=status.HTTP_200_OK)
+
+    # If the serializer is invalid, return errors
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def get_spa_order_status(request):
     """
-    API endpoint to create a new hotel order.
+    API endpoint to fetch all spa orders based on their status.
 
-    Accepts the following parameters in the request body:
-    - username: The username of the customer making the booking.
-    - amount: The total amount of the booking.
-    - category: The category of the booking (e.g. 'single', 'double', etc.).
-    - check_in: The check-in date of the booking in the format 'YYYY-MM-DD'.
-    - check_out: The check-out date of the booking in the format 'YYYY-MM-DD'.
-    - room_count: The number of rooms booked.
-    - guest_count: The number of guests in the booking.
+    Accepts the following parameter in the request query string:
+    - status: The status of the orders to fetch. Accepted values are 'Booked', 'checked_in', 'checked_out'.
 
-    Returns a JSON object with the newly created order details if the creation is successful.
-    Returns a JSON object with an error message if the creation fails.
+    Returns a JSON object with the list of hotel orders if the fetch is successful.
+    Returns a JSON object with an error message if the fetch fails.
     """
-    if request.method == 'POST':
-        serializer = HotelOrdersSerializer(data=request.data)        
-        if serializer.is_valid():
-            if serializer.validated_data['status'] =="" or "booked":
-                serializer.validated_data['status'] = "Booked"
-            hotel_order =serializer.save()  # Save the validated data
-            
-            customer_username = hotel_order.customer_id.name if hotel_order.customer_id else None
-            # Rooms.objects.update(room=hotel_order.room_count.id, status='Booked')
-            room_ids = [room.id for room in hotel_order.room_count.all()]
-            Rooms.objects.filter(id__in=room_ids).update(status='Booked')
+    status_param = request.query_params.get('status', None)
 
-            return Response({'message': 'Hotel Booking success','username': customer_username,'order': serializer.data}, status=status.HTTP_201_CREATED)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        print(status)
+        order = SpaOrder.objects.filter(status=status_param).all()
+        if not order.exists():
+            return Response({'message': 'No hotel orders found for the given status.'},
+                            status=status.HTTP_404_NOT_FOUND)
+        serializer = SpaOrdersSerializer(order, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def get_spa_payment_status(request):
+    """
+    API endpoint to update the payment status of a spa order.
+
+    - `GET /payment-status?customer_id=<int:customer_id>&order_id=<int:order_id>&status=<str:status>`
+
+    Parameters:
+    - `customer_id`: The id of the customer (Employee) to filter orders by.
+    - `order_id`: The id of the order to update the payment status for.
+    - `status`: The status to update the order record with. Accepted values are 'paid' and 'unpaid'.
+
+    Returns a JSON object with the updated order record details if the update is successful.
+    Returns a JSON object with an error message if the update fails.
+
+    Raises:
+    - `404`: If the hotel order record is not found.
+    """
+
+    try:
+        payment_param = request.query_params.get('payment_status')
+        payment_param=payment_param.lower()
+        if not payment_param:
+            return Response({'error': 'Payment status parameter is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        spa_orders = SpaOrder.objects.filter(payment_status=payment_param)
+
+        if not spa_orders.exists():
+            return Response({'error': 'No spa orders found with the given payment status.'},
+                            status=status.HTTP_404_NOT_FOUND)
+
+        serializer = SpaOrdersSerializer(spa_orders, many=True)  # Corrected serialization
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 
 
 @api_view(['PUT'])
@@ -436,7 +595,7 @@ def update_hotel_orders(request):
         return Response({'error': 'Hotel order record not found.'}, status=status.HTTP_404_NOT_FOUND)
     
     # Use the existing hotel order instance for updating
-    serializer = HotelOrdersSerializer(hotel, data=request.data)
+    serializer = HotelOrdersSerializer(hotel, data=request.data, partial = True)
     
     if serializer.is_valid():
         # Check for the status and update accordingly
@@ -466,6 +625,9 @@ def update_hotel_orders(request):
 
             if check_in_dt >= check_out_dt:
                 return Response({'message': 'Check-in time cannot be greater than or equal to check-out time.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if request.data.get('payment_status') == 'paid':
+            serializer.validated_data['payment_status'] = 'paid'
 
         # Save the updated hotel order
         hotel_order = serializer.save()
@@ -500,19 +662,28 @@ def get_hotel_orders(request):
         # Fetch data asynchronously
         orders = HotelOrder.objects.all()
         # Serialize the data
-        serializer = HotelOrdersSerializer(orders, many=True)
+        serializer = HotelOrder(orders, many=True)
         # Return the serialized data as a response
         return Response(serializer.data, status=status.HTTP_200_OK)
     except Exception as e:
         # Handle any errors
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-  
 
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 
 @api_view(['GET'])
 def get_orders(request):
+    """
+    API endpoint to retrieve all hotel orders.
+
+    Returns a JSON response containing a list of all hotel orders
+    with their details if the retrieval is successful.
+
+    Returns:
+    - 200 OK: A JSON object with the list of all hotel orders.
+    """
     with connection.cursor() as cursor:
         cursor.execute('SELECT * FROM building.kovais_hotelorder')
         rows = cursor.fetchall()
@@ -534,11 +705,111 @@ def get_orders(request):
     # # Return the serialized data as a response
     # return Response(serializer.data, status=status.HTTP_200_OK)
     
-    
+
 @api_view(['GET'])
 def get_room_count(request):
+    """
+    API endpoint to retrieve the count of available rooms.
+
+    Returns a JSON response containing the count of rooms that are
+    currently marked as 'Available'.
+
+    Returns:
+    - 200 OK: A JSON object with the key 'available_rooms_count' and its value.
+    """
     available_rooms_count = Rooms.objects.filter(status='Available').count()
     return Response({'available_rooms_count': available_rooms_count}, status=status.HTTP_200_OK)
+    available_rooms_count = Rooms.objects.filter(status='Available').count()
+    return Response({'available_rooms_count': available_rooms_count}, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def get_order_by_id_and_date(request):
+    """
+    API endpoint to retrieve orders by employee_id and date.
+
+    Parameters:
+    - `employee_id`: The ID of the employee who created the order
+    - `date`: The date of the order in 'YYYY-MM-DD' format
+    - `role`: The role of the employee who created the order
+
+    Returns:
+    - 200 OK: A JSON object containing the orders
+    - 400 BAD REQUEST: If `employee_id`, `date`, or `role` is invalid
+    - 404 NOT FOUND: If no orders are found
+    - 500 INTERNAL SERVER ERROR: If there is an unexpected error
+    """
+    employee_id = request.query_params.get('employee_id')
+    date_str = request.query_params.get('date')  # Expecting 'YYYY-MM-DD' format
+    role = request.query_params.get('role')
+
+    # Validate employee_id
+    if not employee_id or not employee_id.isdigit():
+        return Response({'error': 'Valid employee_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Validate date
+    if not date_str:
+        return Response({'error': 'Date is required in YYYY-MM-DD format'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Convert date string to date object
+    try:
+        date_obj = datetime.strptime(date_str, '%Y-%m-%d').date()
+    except ValueError:
+        return Response({'error': 'Invalid date format. Use YYYY-MM-DD'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Validate role
+    if not role:
+        return Response({'error': 'Role is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        # Ensure the employee exists
+        emp_role = Employee.objects.get(id=employee_id, role=role)
+
+    except Employee.DoesNotExist:
+        print(f"Error: No Employee found with ID {employee_id} and Role '{role}'")
+        return Response({'error': 'Invalid employee or role'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        # Filter orders by employee_id and created_at date
+        if emp_role.role == "hotel":
+            orders = HotelOrder.objects.annotate(
+                created_date=TruncDate('created_at')  # Ensures only the date is compared
+            ).filter(
+                employee_id=employee_id,
+                created_date=date_obj
+            )
+        elif emp_role.role == "spa":
+            orders = SpaOrder.objects.annotate(
+                created_date=TruncDate('created_at')  # Ensures only the date is compared
+            ).filter(
+                employee_id=employee_id,
+                created_date=date_obj
+            )
+        elif emp_role.role == "gym":
+            orders = GymOrder.objects.annotate(
+                created_date=TruncDate('created_at')  # Ensures only the date is compared
+            ).filter(
+                employee_id=employee_id,
+                created_date=date_obj
+            )
+        elif emp_role == "saloon":
+            orders = SaloonOrder.objects.annotate(
+                created_date=TruncDate('created_at')  # Ensures only the date is compared
+            ).filter(
+                employee_id=employee_id,
+                created_date=date_obj
+            )
+        if not orders.exists():
+            return Response({'error': 'No orders found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Serialize the orders
+        serializer = HotelOrdersSerializer(orders, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        print(f"Unexpected Error: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 @api_view(['GET'])
 def get_hotel_order_status(request):
@@ -551,14 +822,14 @@ def get_hotel_order_status(request):
     Returns a JSON object with the list of hotel orders if the fetch is successful.
     Returns a JSON object with an error message if the fetch fails.
     """
-    status_param = request.query_params.get('status', None).lower()
+    status_param = request.query_params.get('status', None)
     
     try:
         print(status)
         order = HotelOrder.objects.filter(status=status_param).all()
         if not order.exists():
             return Response({'message': 'No hotel orders found for the given status.'}, status=status.HTTP_404_NOT_FOUND)
-        serializer =HotelOrdersSerializer(order,many=True)
+        serializer =HotelOrder(order,many=True)
         return Response(serializer.data,status=status.HTTP_200_OK)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -794,8 +1065,7 @@ def get_payment_status(request):
     Raises:
     - `404`: If the hotel order record is not found.
     """
-    
-    
+
     try:
         param = request.query_params.get('customer_id')
         # status_param = request.query_params.get('status', None).lower()
@@ -804,8 +1074,37 @@ def get_payment_status(request):
     except HotelOrder.DoesNotExist:
         return Response({'error': 'Hotel order record not found.'}, status=status.HTTP_404_NOT_FOUND)
 
-    serializer = HotelOrdersSerializer(hotel, data=request.data,partial =True)
-
-    
+    serializer = HotelOrder(hotel, data=request.data,partial =True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
+
+@api_view(['POST'])
+def post_hotel_orders(request):
+    if request.method == 'POST':
+        serializer = HotelOrdersSerializer(data=request.data)
+
+        if serializer.is_valid():
+            room_count = int(serializer.validated_data['room_count'])  # Get room count from request
+
+            # Fetch available rooms
+            available_rooms = Rooms.objects.filter(status='Available')[:room_count]
+            print(available_rooms)
+            if len(available_rooms) < room_count:
+                return Response({'error': 'Not enough available rooms'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Book the rooms
+            for room in available_rooms:
+                room.status = 'Booked'
+                room.save()
+
+            # Save the hotel order with room count
+            serializer.validated_data['status'] = "Booked"
+            hotel_order = serializer.save()
+
+            return Response(
+                {'message': 'Hotel Booking success', 'username': hotel_order.customer_id.name,
+                 'order': serializer.data},
+                status=status.HTTP_201_CREATED
+            )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

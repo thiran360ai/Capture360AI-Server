@@ -19,29 +19,35 @@ class TotalEmployeeSerializer(serializers.ModelSerializer):
 class UserDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model =UserDetails
-        fields=  ['id','name','password','membership','subscribed','premium_amount']
+        fields = ['id','name','password','membership','subscribed','premium_amount']
 
 
 class SaloonOrdersSerializer(serializers.ModelSerializer):
+    customer_name = serializers.CharField(source="customer_id.name", read_only=True)
+
     class Meta:
-        model =SaloonOrder
-        fields=  ['customer_id', 'order_type', 'category', 'services', 'payment_status', 'payment_type', 'amount', 'date', 'time', 'created_at']
+        model = SaloonOrder
+        fields = '__all__'  # This includes all model fields
+        extra_fields = ['customer_name']
         created_at = serializers.SerializerMethodField()
   
 
 
 class GymOrderSerializer(serializers.ModelSerializer):
+    customer_name = serializers.CharField(source="customer_id.name", read_only=True)
+
     class Meta:
-        model =GymOrder
-        fields = ['id','customer_id','employee_id','gender','age','timeslot','status','category','plan','amount','attendance','purchaseddate','expiry_date','created_at','payment_status']
-        created_at = serializers.SerializerMethodField()
+        model = GymOrder
+        fields = '__all__'  # This includes all model fields
+        extra_fields = ['customer_name']
 
 class SpaOrdersSerializer(serializers.ModelSerializer):
-    class Meta:
-        model =SpaOrder
-        fields=  ['id','customer_id','employee_id','category','services','payment_status','payment_type','amount','date','time','created_at','status']
-        created_at = serializers.SerializerMethodField()
+    customer_name = serializers.CharField(source="customer_id.name", read_only=True)
 
+    class Meta:
+        model = SpaOrder
+        fields = '__all__'  # This includes all model fields
+        extra_fields = ['customer_name']
 
 class HotelOrdersSerializer(serializers.ModelSerializer):
     class Meta:

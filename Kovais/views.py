@@ -829,7 +829,7 @@ def get_hotel_order_status(request):
         order = HotelOrder.objects.filter(status=status_param).all()
         if not order.exists():
             return Response({'message': 'No hotel orders found for the given status.'}, status=status.HTTP_404_NOT_FOUND)
-        serializer =HotelOrder(order,many=True)
+        serializer =HotelOrdersSerializer(order,many=True)
         return Response(serializer.data,status=status.HTTP_200_OK)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

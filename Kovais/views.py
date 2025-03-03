@@ -1218,7 +1218,7 @@ def update_saloon_orders(request):
         order_param = request.query_params.get('order_id')
         # Fetch the specific hotel order record by customer_id and order_id
         saloon = SaloonOrder.objects.get(customer_id=customer_param, id=order_param)
-        print(gym)  # Debug: Print the fetched hotel order
+        print(saloon)  # Debug: Print the fetched hotel order
     except SaloonOrder.DoesNotExist:
         return Response({'error': 'Hotel order record not found.'}, status=status.HTTP_404_NOT_FOUND)
 

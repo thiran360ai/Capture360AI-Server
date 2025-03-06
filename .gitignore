@@ -168,5 +168,8 @@ cython_debug/
 ..Trust/migrations/0001_initial.py
 ../Kovais/migrations/0001_initial.py
 ../Kovais/migrations/0002_rename_customer_hotelorder_customer_id_and_more.py
+../Kovais/migrations/0003_remove_hotelorder_room_count_hotelorder_room_count.py
+../Kovais/migrations/0004_task.py
+../Kovais/migrations/0005_task_assigned_to_alter_task_employee.py
 ../Attendance/migrations/0001_initial.py
 ../profile_utility/migrations/0001_initial.py

@@ -55,4 +55,10 @@ urlpatterns = [
     path('get-attendance-id/', get_attendance_id),
     path('get/all-attendance/', get_all_attendance),
     path('get-present/', get_present),
+
+    # Admin task manager
+
+    path('create-task/', create_task),
+    path('get-all-tasks/', get_all_task),
+    path('update-task/', update_task),
 ]

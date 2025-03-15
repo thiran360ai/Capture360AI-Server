@@ -4,35 +4,35 @@ from .models import Post, Plan, ItemList, VideoUpload, VideoFrame, Customer, Sav
 
 # Register your models here.
 @admin.register(Post)
-class PostAdmin(admin.ModelAdmin):
+class PostAdmin(ImportExportModelAdmin):
     list_display = ['user', 'project_name', 'company_name', 'location']
 
 
 @admin.register(Plan)
-class PlanAdmin(admin.ModelAdmin):
+class PlanAdmin(ImportExportModelAdmin):
     list_display = ['project', 'floor', 'floor_or_name', 'image']
 
 
 @admin.register(ItemList)
-class ItemListAdmin(admin.ModelAdmin):
+class ItemListAdmin(ImportExportModelAdmin):
     list_display = ['project', 'image', 'total_floors', 'no_of_employees']
 
 
 @admin.register(VideoUpload)
-class VideoUploadAdmin(admin.ModelAdmin):
+class VideoUploadAdmin(ImportExportModelAdmin):
     list_display = ['user', 'floor', 'description', 'file', 'thumbnail', 'upload_date', 'plan','json']
 
 
 @admin.register(VideoFrame)
-class VideoFrameAdmin(admin.ModelAdmin):
+class VideoFrameAdmin(ImportExportModelAdmin):
     list_display = ['video', 'frame_number', 'image', 'timestamp', 'plan','json']
 
 
 @admin.register(Customer)
-class CustomerAdmin(admin.ModelAdmin):
+class CustomerAdmin(ImportExportModelAdmin):
     list_display = ['username', 'email_id', 'course', 'mobile', 'designation', 'college_name', 'address', 'resume']
 
 
 @admin.register(SaveJson)
-class SaveJsonAdmin(admin.ModelAdmin):
+class SaveJsonAdmin(ImportExportModelAdmin):
     list_display = ['id','project', 'name', 'data','plan']

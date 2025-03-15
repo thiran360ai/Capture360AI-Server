@@ -7,33 +7,40 @@ class CustomEmployeeAdmin(admin.ModelAdmin):
 
 @admin.register(UserDetails)
 class UserDetailsAdmin(admin.ModelAdmin):
-    list_display= ['name','password','membership','subscribed','premium_amount']
+    list_display= ['id','name','password','membership','subscribed','premium_amount']
 
 
-# @admin.register(SaloonOrder)
-# class SaloonOrdersAdmin(admin.ModelAdmin):
-#     list_display= ['id','username','order_type','category','services','payment_status','date','payment_type','time','amount','created_at']
+@admin.register(SaloonOrder)
+class SaloonOrdersAdmin(admin.ModelAdmin):
+    list_display = ['id', 'customer_id', 'employee_id', 'order_type', 'category', 'services', 'payment_status', 'date', 'payment_type', 'time', 'amount', 'created_at', 'status']
 
 
-# @admin.register(GymOrder)
-# class GymOrderAdmin(admin.ModelAdmin):
-#     list_display= ['id','customer_id','gender','timeslot','status','category','plan','amount','attendance','purchaseddate','expiry_date','created_at']
+@admin.register(GymOrder)
+class GymOrderAdmin(admin.ModelAdmin):
+    list_display= ['id', 'customer_id', 'employee_id', 'gender','age', 'timeslot', 'status', 'category', 'plan', 'amount', 'attendance', 'purchaseddate', 'expiry_date', 'created_at', 'payment_status']
 
 
-# @admin.register(SpaOrder)
-# class SpaOrdersAdmin(admin.ModelAdmin):
-#     list_display= ['id','username','order_type','category','services','date','time','created_at']
+@admin.register(SpaOrder)
+class SpaOrdersAdmin(admin.ModelAdmin):
+    list_display= ['id','customer_id','employee_id','category','services','payment_status','payment_type','amount','date','time','created_at','status']
+class HotelOrdersAdmin(admin.ModelAdmin):
+    list_display = ['id', 'customer_id', 'employee_id', 'guest_name', 'amount', 'check_in', 'check_out', 'category',
+                    'room_count', 'guest_count', 'status', 'payment_status', 'created_at']
+
+    def room_count(self, obj):
+        return ", ".join([str(item) for item in obj.room_count.all()])  # Replace 'many_to_many_field' with actual field name
+
+    room_count.short_description = "Related Items"  # Custom column name
 
 
-# @admin.register(HotelOrder)
-# class HotelOrdersAdmin(admin.ModelAdmin):
-#     list_display= ['id','customer_id','amount','category','check_in','check_out','room_count','guest_count','created_at','status','payment_status']
+admin.site.register(HotelOrder, HotelOrdersAdmin)
+
 
 @admin.register(Attendance)
 class AttendanceAdmin(admin.ModelAdmin):
-    list_display= ['id','employee_attendance','status','check_in','check_out']
+    list_display= ['id', 'employee_attendance', 'status', 'check_in', 'check_out']
     
-    
+
 @admin.register(Rooms)
 class RoomsAdmin(admin.ModelAdmin):
-    list_display= ['id','room','status']
+    list_display= ['id', 'room', 'status']

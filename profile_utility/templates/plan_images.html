@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Plan Images</title>
+</head>
+<body>
+    <h1>Plan Images</h1>
+    <div>
+        {% for plan in plans %}
+            <div>
+                <h2>{{ plan.floor_or_name }}</h2>
+                {% if plan.image %}
+                    <img src="{{ plan.image.url }}" alt="{{ plan.floor_or_name }}" style="width:300px;height:auto;">
+                {% else %}
+                    <p>No image available</p>
+                {% endif %}
+                <p><a href="{% url 'plan_edit_view' plan.id %}">Edit Plan</a></p>
+            </div>
+        {% endfor %}
+    </div>
+</body>
+</html>

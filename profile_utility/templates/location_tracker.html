@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Location Tracker</title>
+    <style>
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>Location Tracker</h1>
+    <div id="location"></div>
+    <div id="error" class="error"></div>
+    <script>
+        function sendLocation(latitude, longitude) {
+            console.log('Sending location to server:', latitude, longitude);
+            fetch('http://127.0.0.1:8000/add_location/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    plan_id: 1,  // Replace with the actual plan ID
+                    latitude: latitude,
+                    longitude: longitude,
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+
+        function showError(error) {
+            const errorElement = document.getElementById('error');
+            switch (error.code) {
+                case error.PERMISSION_DENIED:
+                    errorElement.textContent = "User denied the request for Geolocation.";
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    errorElement.textContent = "Location information is unavailable.";
+                    break;
+                case error.TIMEOUT:
+                    errorElement.textContent = "The request to get user location timed out.";
+                    break;
+                case error.UNKNOWN_ERROR:
+                    errorElement.textContent = "An unknown error occurred.";
+                    break;
+            }
+            console.error("Geolocation error code:", error.code, "Message:", error.message);
+        }
+
+        function trackLocation() {
+            if (navigator.geolocation) {
+                console.log('Geolocation is supported');
+                navigator.geolocation.watchPosition(
+                    (position) => {
+                        const latitude = position.coords.latitude;
+                        const longitude = position.coords.longitude;
+                        console.log(`Latitude: ${latitude}, Longitude: ${longitude}`);
+                        document.getElementById('location').textContent = `Latitude: ${latitude}, Longitude: ${longitude}`;
+                        sendLocation(latitude, longitude);
+                    },
+                    (error) => {
+                        console.error('Error getting location:', error.message);
+                        showError(error);
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 30000,  // Increased timeout to 30 seconds
+                        maximumAge: 0
+                    }
+                );
+            } else {
+                console.log("Geolocation is not supported by this browser.");
+                document.getElementById('error').textContent = "Geolocation is not supported by this browser.";
+            }
+        }
+
+        trackLocation();
+    </script>
+</body>
+</html>

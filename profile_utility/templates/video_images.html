@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>360-Degree Image Viewer</title>
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000;
+            height: 100vh;
+            position: relative;
+        }
+        .split {
+            height: 100%;
+            width: 50%;
+            position: fixed;
+            z-index: 1;
+            top: 0;
+            overflow-x: hidden;
+        }
+        
+        .left {
+            left: 0;
+            background-color: #111;
+        }
+        .right {
+            right: 0;
+            background-color: red;
+            display: none; /* Hidden by default, shown in split-screen mode */
+        }
+        .single-screen {
+            width: 100%; /* Full width in single-screen mode */
+        }
+        .centered {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+        .arrow, .play-button, .split-button {
+            position: absolute;
+            bottom: 10px;
+            width: 50px;
+            height: 50px;
+            background-color: rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+            font-size: 24px;
+            color: #333;
+        }
+        .email-input {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+        }
+        .email-input input {
+            padding: 5px;
+            margin-right: 5px;
+        }
+        .email-input button {
+            padding: 5px;
+        }
+        .left-arrow {
+            left: calc(50% - 100px);
+        }
+        .right-arrow {
+            left: calc(50% + 50px);
+        }
+        .play-button {
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .split-button {
+            left: calc(50% - 175px);
+        }
+        .play-icon, .pause-icon {
+            display: none;
+        }
+        .play-button.active .pause-icon {
+            display: inline-block;
+        }
+        .play-button.active .play-icon {
+            display: none;
+        }
+        {% comment %} .timestamp-list {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+        } {% endcomment %}
+        .timestamp-item {
+            cursor: pointer;
+            padding: 5px;
+        }
+        .timestamp-item:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div id="left" class="split left single-screen">
+        <a-scene>
+            <a-assets>
+                {% for frame in frames %}
+                <img id="image{{ forloop.counter }}" src="{{ frame.url }}">
+                {% endfor %}
+            </a-assets>
+            {% for frame in frames %}
+            <a-sky id="sky{{ forloop.counter }}" src="#image{{ forloop.counter }}" rotation="0 180 0" visible="{{ forloop.first }}"></a-sky>
+            {% endfor %}
+        </a-scene>
+        <div class="arrow left-arrow" onclick="prevImage('left')">&lt;</div>
+        <div class="arrow right-arrow" onclick="nextImage('left')">&gt;</div>
+        <div class="play-button" onclick="toggleAutoChange('left')">
+            <svg class="play-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <svg class="pause-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="6" y="4" width="4" height="16"></rect>
+                <rect x="14" y="4" width="4" height="16"></rect>
+            </svg>
+        </div>
+    </div>
+
+    <div id="right" class="split right">
+        <a-scene>
+            <a-assets>
+                {% for frame in frames %}
+                <img id="image{{ forloop.counter }}-right" src="{{ frame.url }}">
+                {% endfor %}
+            </a-assets>
+            {% for frame in frames %}
+            <a-sky id="sky{{ forloop.counter }}-right" src="#image{{ forloop.counter }}-right" rotation="0 180 0" visible="{{ forloop.first }}"></a-sky>
+            {% endfor %}
+        </a-scene>
+        <div class="arrow left-arrow" onclick="prevImage('right')">&lt;</div>
+        <div class="arrow right-arrow" onclick="nextImage('right')">&gt;</div>
+        <div class="play-button" onclick="toggleAutoChange('right')">
+            <svg class="play-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <svg class="pause-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="6" y="4" width="4" height="16"></rect>
+                <rect x="14" y="4" width="4" height="16"></rect>
+            </svg>
+        </div>
+    </div>
+
+    <div class="split-button" onclick="toggleSplitScreen()">&#x1F50D;</div>
+    <div class="mark-button" onclick="markFrame()">&#9733;</div>
+
+    <div class="email-input">
+        <input type="email" id="email" placeholder="Enter email">
+        <button onclick="sendEmail()">Notify</button>
+    </div>
+
+    <div class="timestamp-list" id="timestamp-list">
+        {% for frame in frames %}
+        <div class="timestamp-item" onclick="showImage({{ forloop.counter0 }})">{{ frame.timestamp }}</div>
+        {% endfor %}
+    </div>
+    
+
+    <script>
+        var imageIndexLeft = 0;
+        var imageIndexRight = 0;
+        var imageCount = {{ frames|length }};
+        var autoChangeIntervalLeft = null;
+        var autoChangeIntervalRight = null;
+        var isAutoChangingLeft = false;
+        var isAutoChangingRight = false;
+        var isSplitScreen = false;
+        var email = "";
+
+        document.querySelector('.a-canvas').addEventListener('click', toggleSplitScreen);
+
+        function prevImage(side) {
+            if (side === 'left') {
+                imageIndexLeft = (imageIndexLeft - 1 + imageCount) % imageCount;
+                updateImage('left');
+                if (isSplitScreen) {
+                    imageIndexRight = imageIndexLeft;
+                    updateImage('right');
+                }
+            } else {
+                imageIndexRight = (imageIndexRight - 1 + imageCount) % imageCount;
+                updateImage('right');
+                imageIndexLeft = imageIndexRight;
+                updateImage('left');
+            }
+        }
+
+        function nextImage(side) {
+            if (side === 'left') {
+                imageIndexLeft = (imageIndexLeft + 1) % imageCount;
+                updateImage('left');
+                if (isSplitScreen) {
+                    imageIndexRight = imageIndexLeft;
+                    updateImage('right');
+                }
+            } else {
+                imageIndexRight = (imageIndexRight + 1) % imageCount;
+                updateImage('right');
+                imageIndexLeft = imageIndexRight;
+                updateImage('left');
+            }
+        }
+
+        function updateImage(side) {
+            if (side === 'left') {
+                for (var i = 0; i < imageCount; i++) {
+                    var sky = document.getElementById('sky' + (i + 1));
+                    sky.setAttribute('visible', i === imageIndexLeft);
+                }
+            } else {
+                for (var i = 0; i < imageCount; i++) {
+                    var sky = document.getElementById('sky' + (i + 1) + '-right');
+                    sky.setAttribute('visible', i === imageIndexRight);
+                }
+            }
+        }
+
+        function toggleAutoChange(side) {
+            if (side === 'left') {
+                if (isAutoChangingLeft) {
+                    stopAutoChange('left');
+                } else {
+                    startAutoChange('left');
+                }
+            } else {
+                if (isAutoChangingRight) {
+                    stopAutoChange('right');
+                } else {
+                    startAutoChange('right');
+                }
+            }
+        }
+
+        function startAutoChange(side) {
+            if (side === 'left') {
+                isAutoChangingLeft = true;
+                autoChangeIntervalLeft = setInterval(function() { nextImage('left'); }, 3000);
+                document.querySelector('#left .play-button').classList.add('active');
+            } else {
+                isAutoChangingRight = true;
+                autoChangeIntervalRight = setInterval(function() { nextImage('right'); }, 3000);
+                document.querySelector('#right .play-button').classList.add('active');
+            }
+        }
+
+        {% comment %} function stopAutoChange(side) {
+            if (side === 'left') {
+                isAutoChangingLeft = false;
+                clearInterval(autoChangeIntervalLeft);
+                document.querySelector('#left .play-button').classList.remove('active');
+            } else {
+                isAutoChangingRight = false;
+                clearInterval(autoChangeIntervalRight);
+                document.querySelector('#right .play-button').classList.remove('active');
+            }
+        } {% endcomment %}
+
+        function showImage(index) {
+            imageIndexLeft = index;
+            imageIndexRight = index;
+            updateImage('left');
+            updateImage('right');
+        }
+
+        function toggleSplitScreen() {
+            var sceneLeft = document.getElementById('left');
+            var sceneRight = document.getElementById('right');
+            if (isSplitScreen) {
+                sceneRight.style.display = 'none';
+                sceneLeft.classList.add('single-screen');
+                isSplitScreen = false;
+            } else {
+                sceneRight.style.display = 'block';
+                sceneLeft.classList.remove('single-screen');
+                imageIndexRight = imageIndexLeft;
+                updateImage('right');
+                isSplitScreen = true;
+            }
+        }
+        function markFrame() {
+            markedFrames.push(imageIndexLeft);
+            alert('Frame marked!');
+        }
+        function sendEmail() {
+            var emailInput = document.getElementById('email');
+            email = emailInput.value;
+            if (email && markedFrames.length > 0) {
+                // Here you would typically send the email through a server-side script
+                alert('Email sent to ' + email + ' with marked frames: ' + markedFrames.join(', '));
+            } else if (!email) {
+                alert('Please enter an email address.');
+            } else {
+                alert('No frames marked.');
+            }
+        }
+        function sendEmailNotification(imageUrl) {
+            document.getElementById('image-url').value = imageUrl;
+
+            fetch('/send-email-notification/', {
+                method: 'POST',
+                body: new FormData(document.getElementById('email-form'))
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Email notification sent successfully.');
+                } else {
+                    console.error('Failed to send email notification:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('An error occurred while sending email notification:', error);
+            });
+        }
+    </script>
+</body>
+</html>
+

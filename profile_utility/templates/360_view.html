@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>360 Degree View</title>
+    <style>
+        #image-container {
+            width: 100%;
+            height: 500px; /* Adjust height as needed */
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            justify-content: center;
+        }
+        #image {
+            position: absolute;
+            width: auto;
+            height: 100%;
+            transition: transform 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <h1>360 Degree View</h1>
+    <div id="image-container">
+        <img id="image" src="" alt="360 View">
+    </div>
+    <script>
+        const imagePaths = {{ image_paths|safe }};
+        let currentFrame = 0;
+        const imageElement = document.getElementById('image');
+
+        function rotateImage() {
+            currentFrame = (currentFrame + 1) % imagePaths.length;
+            imageElement.src = imagePaths[currentFrame];
+        }
+
+        setInterval(rotateImage, 100); // Adjust interval as needed
+    </script>
+</body>
+</html>

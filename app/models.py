@@ -1,162 +1,87 @@
 from django.db import models
 
-# Create your models here.
-from django.contrib.auth.models import AbstractUser
 
-
-# User Model
-class User(AbstractUser):
-    email = models.EmailField(unique=True)  # Unique Email for authentication
-    mobile_number = models.CharField(max_length=15, unique=True)  # Store phone numbers
-    is_employee = models.BooleanField(default=False)  # True for shop owners
-    latitude = models.FloatField(null=True, blank=True)  # User's location
-    longitude = models.FloatField(null=True, blank=True)
-    address = models.TextField(null=True, blank=True)  # Optional address
-    # delivers_orders = models.BooleanField(default=True) 
-
-    USERNAME_FIELD = 'email'  # Login using Email instead of Username
-    REQUIRED_FIELDS = ['username', 'mobile_number']
-    groups = models.ManyToManyField(
-        'auth.Group',
-        verbose_name='groups',
-        blank=True,
-        related_name='employees',  # Unique related name for groups
-        related_query_name='employee',
-    )
-    user_permissions = models.ManyToManyField(
-        'auth.Permission',
-        verbose_name='user permissions',
-        blank=True,
-        related_name='employees',  # Unique related name for user permissions
-        related_query_name='employee',
-    )
-    def __str__(self):
-        return self.email
-    
-# # Category Model
-# class Category(models.Model):
-#     name = models.CharField(max_length=255)
-
-# # Shop Profile Model
-# class Profile(models.Model):
-#     employee = models.ForeignKey(User, on_delete=models.CASCADE)
-#     category = models.ForeignKey(Category, on_delete=models.CASCADE)
-#     # shop_name
-#     # shop_image = models.ImageField(upload_to='shops/',blank=True,null=True)
-#     latitude = models.FloatField()
-#     longitude = models.FloatField()
-#     delivers_orders = models.BooleanField(default=True) 
-
-
-# # Product Model
-# class Product(models.Model):
-#     name = models.CharField(max_length=255)
-#     category = models.ForeignKey(Category, on_delete=models.CASCADE)
-#     price = models.FloatField()
-#     offer_price = models.FloatField()
-#     profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
-
-
-
-# # Order Model
-# class Order(models.Model):
-#     user = models.ForeignKey(User, on_delete=models.CASCADE)
-#     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-#     status = models.CharField(max_length=255, default='Pending')
-#     timestamp = models.DateTimeField(auto_now_add=True)
-#     delivery_time = models.IntegerField()
-    
-
-from django.db import models
-from django.contrib.auth import get_user_model
-
-User = get_user_model()
-
-class Category(models.Model):
-    name = models.CharField(max_length=255, unique=True)
-    parent = models.ForeignKey(
-        'self', null=True, blank=True, 
-        on_delete=models.CASCADE, related_name='subcategories'
-    )
-
-    class Meta:
-        app_label = 'app'  # Ensure Django knows the app
-
-    def __str__(self):
-        return f"{self.parent.name} -> {self.name}" if self.parent else self.name
-
-
-class Profile(models.Model):
-    employee = models.ForeignKey(User, on_delete=models.CASCADE)
-    # //userid
-    shop_name = models.CharField(max_length=255)
-    shop_image = models.ImageField(upload_to='shops/', blank=True, null=True)
-    latitude = models.FloatField()
-    longitude = models.FloatField()
-    delivers_orders = models.BooleanField(default=True)
-
-    def __str__(self):
-        return self.shop_name
-
-
-class Product(models.Model):
-    name = models.CharField(max_length=255)
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
-    profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
-    price = models.FloatField()
-    offer_price = models.FloatField()
-    description = models.TextField()
-    # stock = models.PositiveIntegerField(default=0)
-    # created_at = models.DateTimeField(auto_now_add=True)
+# Property Model
+class Property(models.Model):
+    name = models.CharField(max_length=100)  # Property Name
+    contact_number = models.CharField(max_length=15)  # Contact Number
 
     def __str__(self):
         return self.name
 
-
-class ProductVariation(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="variations")
-    attribute_name = models.CharField(max_length=255)  # Size, Color, etc.
-    attribute_value = models.CharField(max_length=255)  # Red, XL, etc.
-    price = models.FloatField()
-    stock = models.PositiveIntegerField(default=0)
+# Banner Model
+class Banner(models.Model):
+    image = models.ImageField(upload_to='banners/')  # Banner Image
 
     def __str__(self):
-        return f"{self.product.name} - {self.attribute_name}: {self.attribute_value}"
+        return f"Banner {self.id}"
 
 
-class Order(models.Model):
-    STATUS_CHOICES = [
-        ('Pending', 'Pending'),
-        ('Shipped', 'Shipped'),
-        ('Delivered', 'Delivered'),
-        ('Cancelled', 'Cancelled'),
+
+from django.db import models
+
+class LocationExample(models.Model):
+    # Country Choices (2 Countries)
+    COUNTRY_CHOICES = [
+        ('india', 'India'),
+        ('usa', 'USA'),
     ]
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    product = models.ForeignKey(ProductVariation, on_delete=models.CASCADE)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
-    timestamp = models.DateTimeField(auto_now_add=True)
-    delivery_time = models.IntegerField(null=True, blank=True)  # Estimated delivery time in hours
-    tracking_id = models.CharField(max_length=255, unique=True, blank=True)
+    # State Choices (Each Country's States)
+    STATE_CHOICES = [
+        # India
+        ('tamil_nadu', 'Tamil Nadu'),
+        ('karnataka', 'Karnataka'),
+        ('maharashtra', 'Maharashtra'),
+        # USA
+        ('california', 'California'),
+        ('texas', 'Texas'),
+        ('new_york', 'New York'),
+    ]
+
+    # District Choices (Each State's Districts)
+    DISTRICT_CHOICES = [
+        # India → Tamil Nadu
+        ('chennai', 'Chennai'),
+        ('madurai', 'Madurai'),
+        # India → Karnataka
+        ('bangalore', 'Bangalore'),
+        ('mysore', 'Mysore'),
+        # India → Maharashtra
+        ('mumbai', 'Mumbai'),
+        ('pune', 'Pune'),
+        
+        # USA → California
+        ('los_angeles', 'Los Angeles'),
+        ('san_francisco', 'San Francisco'),
+        # USA → Texas
+        ('houston', 'Houston'),
+        ('dallas', 'Dallas'),
+        # USA → New York
+        ('manhattan', 'Manhattan'),
+        ('brooklyn', 'Brooklyn'),
+    ]
+
+
+    country = models.CharField(max_length=20, choices=COUNTRY_CHOICES, default='india')
+    state = models.CharField(max_length=20, choices=STATE_CHOICES, default='tamil_nadu')
+    district = models.CharField(max_length=20, choices=DISTRICT_CHOICES, default='chennai')
+    # role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='user')
 
     def __str__(self):
-        return f"Order {self.id} - {self.status}"
+        return f"{self.get_district_display()}, {self.get_state_display()}, {self.get_country_display()} ({self.get_role_display()})"
 
 
-class Cart(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    product = models.ForeignKey(ProductVariation, on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField(default=1)
-    added_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.user.username} - {self.product.product.name} ({self.quantity})"
-
-
-class Wishlist(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    product = models.ForeignKey(ProductVariation, on_delete=models.CASCADE)
-    added_at = models.DateTimeField(auto_now_add=True)
+# Land Listing Model
+class LandListing(models.Model):
+    district = models.ForeignKey(LocationExample, on_delete=models.CASCADE, related_name="lands")  # District (City)
+    image = models.ImageField(upload_to="land_images/")  # Land Image
+    title = models.CharField(max_length=255)  # Land Title
+    description = models.TextField()  # Short Description
+    detail_description = models.TextField()  # Detailed Description
+    price = models.DecimalField(max_digits=10, decimal_places=2)  # Price
+    latitude = models.FloatField()  # Latitude for Map
+    longitude = models.FloatField()  # Longitude for Map
 
     def __str__(self):
-        return f"{self.user.username} - {self.product.product.name}"
+        return self.title

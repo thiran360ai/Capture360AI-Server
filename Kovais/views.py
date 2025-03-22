@@ -133,8 +133,8 @@ def delete_employee(request):
         return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
 
-@api_view(['POST'])
-def customer_login(request):
+# @api_view(['POST'])
+# def customer_login(request):
     """
     API endpoint for customer login.
 
@@ -150,24 +150,24 @@ def customer_login(request):
     - 400 Bad Request: A JSON object with an error message if credentials are invalid.
     - 500 Internal Server Error: A JSON object with an error message if an unexpected error occurs.
     """
-    try:
-        username = request.data.get('username')
-        password = request.data.get('password')
+    # try:
+    #     username = request.data.get('username')
+    #     password = request.data.get('password')
 
-        try:
-            user = UserDetails.objects.get(name=username)
-        except UserDetails.DoesNotExist:
-            return JsonResponse({'login': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
-        if check_password(password, user.password):
-            return JsonResponse({'Message': 'login successfully', 'user_id': user.id, 'username': user.name,
-                                 'membership': user.membership}, status=status.HTTP_200_OK)
-        else:
-            return JsonResponse({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
-    except Exception as e:
+    #     try:
+    #         user = UserDetails.objects.get(name=username)
+    #     except UserDetails.DoesNotExist:
+    #         return JsonResponse({'login': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
+    #     if check_password(password, user.password):
+    #         return JsonResponse({'Message': 'login successfully', 'user_id': user.id, 'username': user.name,
+    #                              'membership': user.membership}, status=status.HTTP_200_OK)
+    #     else:
+    #         return JsonResponse({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
+    # except Exception as e:
 
-        # Print the full traceback to debug the issue
-        traceback.print_exc()
-        return JsonResponse({'error': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    #     # Print the full traceback to debug the issue
+    #     traceback.print_exc()
+    #     return JsonResponse({'error': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['GET'])
@@ -189,21 +189,6 @@ def total_employees(request):
 
 @api_view(['POST'])
 def create_user_details(request):
-    """
-    Creates a new user with the given details.
-
-    Args:
-        request: The POST request containing the user details.
-
-    Returns:
-        A JSON response containing the message "User created successfully" if the user is created successfully.
-        A JSON response containing error details if user creation fails.
-
-    Raises:
-        400: If the required fields are not provided.
-        400: If the username already exists.
-        400: If the premium_amount is invalid.
-    """
     name = request.data.get('name')
     membership = request.data.get('membership', 'silver')
     password = request.data.get('password')
@@ -222,15 +207,20 @@ def create_user_details(request):
     except ValueError:
         return JsonResponse({'error': 'Invalid premium_amount'}, status=400)
 
-    # Set membership based on subscription and premium amount
-    if subscribed and premium_amount == 20000:
-        membership = 'gold'
-    elif subscribed and premium_amount == 50000:
-        membership = 'platinum'
+    # # Set membership based on subscription and premium amount
+    # if subscribed and premium_amount == 20000:
+    #     membership = 'gold'
+    # elif subscribed and premium_amount == 50000:
+    #     membership = 'platinum'
 
-    # Create a mutable copy of request data
+    # Get emblem URL based on membership type
+    emblem_url = UserDetails.EMBLEM_URLS.get(membership, '')
+
+    # Create user
     data = request.data.copy()
     data['membership'] = membership
+    data['emblem_url'] = emblem_url
+    data['points'] = 0  # Start with 0 points
 
     serializer = UserDetailsSerializer(data=data)
     if serializer.is_valid():
@@ -240,7 +230,6 @@ def create_user_details(request):
                         status=status.HTTP_201_CREATED)
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 from django.http import JsonResponse
 from rest_framework.decorators import api_view
@@ -254,50 +243,108 @@ import traceback
 # from .models import Employee  # Replace with your actual model import
 
 
+# @api_view(['POST'])
+# def Emp_login(request):
+#     """
+#     API endpoint for employee login.
+
+#     Accepts the following parameters in the request body:
+#     - email: The email of the employee attempting to login.
+#     - password: The password of the employee.
+
+#     Returns a JSON response containing a message and employee details if the login is successful.
+#     Returns a JSON object with an error message if the login fails.
+
+#     Returns:
+#     - 200 OK: A JSON object with a success message, employee ID, username, and role if credentials are valid.
+#     - 400 Bad Request: A JSON object with an error message if credentials are invalid.
+#     - 500 Internal Server Error: A JSON object with an error message if an unexpected error occurs.
+#     """
+
+#     try:
+#         email = request.data.get('email')
+#         password = request.data.get('password')
+
+#         try:
+#             user = Employee.objects.get(email=email)
+#         except Employee.DoesNotExist:
+#             return JsonResponse({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
+
+#         if check_password(password, user.password):
+#             # Change success to True if password is matched
+#             return JsonResponse({
+#                 'Message': 'Login successfully',
+#                 'success': True,  # Set success to True
+#                 'user_id': user.id,
+#                 'username': user.username,
+#                 'role': user.role
+#             }, status=status.HTTP_200_OK)
+#         else:
+#             return JsonResponse({'error': 'Invalid credentials', 'success': False}, status=status.HTTP_400_BAD_REQUEST)
+
+#     except Exception as e:
+#         # Print the full traceback to debug the issue
+#         traceback.print_exc()
+#         return JsonResponse({'error': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+import traceback
+from django.contrib.auth.hashers import check_password
+from django.utils.timezone import now
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from django.http import JsonResponse
+from rest_framework import status
+from .models import Employee
+
 @api_view(['POST'])
-def Emp_login(request):
-    """
-    API endpoint for employee login.
-
-    Accepts the following parameters in the request body:
-    - email: The email of the employee attempting to login.
-    - password: The password of the employee.
-
-    Returns a JSON response containing a message and employee details if the login is successful.
-    Returns a JSON object with an error message if the login fails.
-
-    Returns:
-    - 200 OK: A JSON object with a success message, employee ID, username, and role if credentials are valid.
-    - 400 Bad Request: A JSON object with an error message if credentials are invalid.
-    - 500 Internal Server Error: A JSON object with an error message if an unexpected error occurs.
-    """
-
+def customer_login(request):
     try:
-        email = request.data.get('email')
+        username = request.data.get('username')
         password = request.data.get('password')
 
+        if not username or not password:
+            return JsonResponse({'error': 'username and password are required', 'success': False}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
-            user = Employee.objects.get(email=email)
-        except Employee.DoesNotExist:
-            return JsonResponse({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
+            user = UserDetails.objects.get(name=username)
+        except UserDetails.DoesNotExist:
+            return JsonResponse({'error': 'Invalid credentials', 'success': False}, status=status.HTTP_400_BAD_REQUEST)
 
         if check_password(password, user.password):
-            # Change success to True if password is matched
-            return JsonResponse({
-                'Message': 'Login successfully',
-                'success': True,  # Set success to True
+            # ✅ Give 200 bonus points on login
+            user.points += 200  
+            user.save()
+
+            # ✅ Get emblem URL based on membership
+            EMBLEM_URLS = {
+                'silver': 'https://postimg.cc/bsn3qPq7',
+                'gold': 'https://yourwebsite.com/images/gold.png',
+                'platinum': 'https://yourwebsite.com/images/platinum.png',
+            }
+            emblem_url = EMBLEM_URLS.get(user.membership, '')
+
+            # ✅ Debugging prints
+            print(f"User: {user.name}, Membership: {user.membership}, Points: {user.points}, Emblem URL: {emblem_url}")
+
+            # ✅ Return the correct response
+            response_data = {
+                'Message': 'Login successful',
+                'success': True,
                 'user_id': user.id,
-                'username': user.username,
-                'role': user.role
-            }, status=status.HTTP_200_OK)
+                'username': user.name,
+                'membership': user.membership,
+                'emblem_url': emblem_url,
+                'points': user.points
+            }
+
+            print(f"Response Data: {response_data}")  # Debug print
+            return JsonResponse(response_data, status=status.HTTP_200_OK)
+
         else:
             return JsonResponse({'error': 'Invalid credentials', 'success': False}, status=status.HTTP_400_BAD_REQUEST)
 
     except Exception as e:
-        # Print the full traceback to debug the issue
         traceback.print_exc()
-        return JsonResponse({'error': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
+        return JsonResponse({'error': 'Internal server error', 'success': False}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
 def get_saloon_orders(request):

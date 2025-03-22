@@ -11,9 +11,9 @@ class CustomerSerializer(serializers.ModelSerializer):
 class EmployeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employee
-        fields = ['id', 'username', 'password', 'mobile', 'email', 'role', 'success', 'location', 'first_name',
-                  'last_name', 'success']
-
+        # fields = ['id', 'username', 'password', 'mobile', 'email', 'role', 'success', 'location', 'first_name',
+                #   'last_name', 'success']
+        fields = '_all_'
 
 class TotalEmployeeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -24,8 +24,8 @@ class TotalEmployeeSerializer(serializers.ModelSerializer):
 class UserDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserDetails
-        fields = ['id', 'name', 'password', 'membership', 'subscribed', 'premium_amount']
-
+        # fields = ['id', 'name', 'password', 'membership', 'subscribed', 'premium_amount']
+        fields = '_all_'
 
 class SaloonOrdersSerializer(serializers.ModelSerializer):
     customer_name = serializers.CharField(source="customer_id.name", read_only=True)

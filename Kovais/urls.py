@@ -11,7 +11,7 @@ urlpatterns = [
 
     # employees
     
-    path('Employee-login/', Emp_login, name='employee_login'),
+    # path('Employee-login/', Emp_login, name='employee_login'),
     path('create-employee/', create_Employee, name='create_employee'),
     path('total-employees/', total_employees, name='total_employees'),
     path('update-employee/', update_employee, name='update_employee'),

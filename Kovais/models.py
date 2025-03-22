@@ -40,21 +40,48 @@ class Employee(AbstractUser):
     )
 
 
+# class UserDetails(models.Model):
+#     MEMBERSHIP_CHOICES = (
+#         ('silver', 'Silver'),
+#         ('gold', 'Gold'),
+#         ('platinum', 'Platinum'),
+#     )
+#     name = models.CharField(max_length=256, blank=True, null=True)
+#     membership = models.CharField(max_length=20, choices=MEMBERSHIP_CHOICES, default='silver', null=True, blank=True)
+#     password = models.CharField(max_length=255)
+#     subscribed = models.BooleanField(default=False, null=True, blank=True)
+#     premium_amount = models.CharField(max_length=255, null=True, blank=True)
+
+#     def __str__(self):
+#         return self.name
 class UserDetails(models.Model):
     MEMBERSHIP_CHOICES = (
         ('silver', 'Silver'),
         ('gold', 'Gold'),
         ('platinum', 'Platinum'),
     )
+
+    EMBLEM_URLS = {
+        'silver': 'https://postimg.cc/bsn3qPq7',
+        'gold': 'https://yourdomain.com/media/emblems/gold.png',
+        'platinum': 'https://yourdomain.com/media/emblems/platinum.png',
+    }
+
     name = models.CharField(max_length=256, blank=True, null=True)
     membership = models.CharField(max_length=20, choices=MEMBERSHIP_CHOICES, default='silver', null=True, blank=True)
     password = models.CharField(max_length=255)
     subscribed = models.BooleanField(default=False, null=True, blank=True)
     premium_amount = models.CharField(max_length=255, null=True, blank=True)
+    emblem_url = models.URLField(max_length=500, blank=True, null=True)
+    points = models.IntegerField(default=0)  # New field for tracking points
+
+    def save(self, *args, **kwargs):
+        """ Automatically set emblem URL based on membership type """
+        self.emblem_url = self.EMBLEM_URLS.get(self.membership, '')
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
-
 
 class Bonus(models.Model):
     name = models.ForeignKey(Employee, on_delete=models.CASCADE)
@@ -69,19 +96,85 @@ class Booking(models.Model):
     bonus = models.ForeignKey(Bonus, on_delete=models.CASCADE)
 
 
+# class SaloonOrder(models.Model):
+#     customer_id = models.ForeignKey(UserDetails, on_delete=models.CASCADE, null=True, blank=True)
+#     employee_id = models.ForeignKey(Employee, on_delete=models.CASCADE, null=True, blank=True)
+#     order_type = models.CharField(max_length=255, null=True, blank=True)
+#     category = models.CharField(max_length=255, null=True, blank=True)
+#     services = models.TextField(null=True, blank=True)
+#     payment_status = models.CharField(max_length=255, null=True, blank=True, default='pending')
+#     payment_type = models.CharField(max_length=255, null=True, blank=True)
+#     amount = models.CharField(max_length=255, null=True, blank=True)
+#     date = models.DateField(null=True, blank=True)
+#     time = models.CharField(max_length=255, null=True, blank=True)
+#     created_at = models.DateTimeField(auto_now_add=True)
+#     status = models.CharField(max_length=255, null=True, blank=True)
+from django.db import models
+
 class SaloonOrder(models.Model):
-    customer_id = models.ForeignKey(UserDetails, on_delete=models.CASCADE, null=True, blank=True)
-    employee_id = models.ForeignKey(Employee, on_delete=models.CASCADE, null=True, blank=True)
-    order_type = models.CharField(max_length=255, null=True, blank=True)
-    category = models.CharField(max_length=255, null=True, blank=True)
-    services = models.TextField(null=True, blank=True)
-    payment_status = models.CharField(max_length=255, null=True, blank=True, default='pending')
-    payment_type = models.CharField(max_length=255, null=True, blank=True)
-    amount = models.CharField(max_length=255, null=True, blank=True)
+    CATEGORY_CHOICES = [
+        ('men', 'Men'),
+        ('women', 'Women'),
+        ('kids', 'Kids'),
+    ]
+
+    SERVICE_CHOICES = {
+        'men': [
+            ('haircut', 'Haircut'),
+            ('shave', 'Shave'),
+            ('hair_coloring', 'Hair Coloring'),
+        ],
+        'women': [
+            ('haircut', 'Haircut'),
+            ('facial', 'Facial'),
+            ('hair_coloring', 'Hair Coloring'),
+        ],
+        'kids': [
+            ('haircut', 'Haircut'),
+        ],
+    }
+
+    SERVICE_PRICES = {
+        'haircut': 300.00,
+        'shave': 150.00,
+        'hair_coloring': 500.00,
+        'facial': 700.00,
+    }
+
+    STATUS_CHOICES = [
+        ('available', 'Available'),
+        ('unavailable', 'Unavailable'),
+    ]
+
+    customer_id = models.ForeignKey('UserDetails', on_delete=models.CASCADE, null=True, blank=True)
+    employee_id = models.ForeignKey('Employee', on_delete=models.CASCADE, null=True, blank=True)
+
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, null=True, blank=True)
+    service_name = models.CharField(max_length=50, null=True, blank=True)
+    service_images = models.JSONField(default=list)  # Store multiple images
+    service_descriptions = models.JSONField(default=list)  # Store multiple descriptions
+
+    amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    payment_status = models.CharField(max_length=20, default='pending')
+    payment_type = models.CharField(max_length=50, null=True, blank=True)
+
+    service_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')  # ✅ New Field for Availability
+
     date = models.DateField(null=True, blank=True)
     time = models.CharField(max_length=255, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=255, null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        """
+        Automatically set the price based on the selected service.
+        """
+        if self.service_name in self.SERVICE_PRICES:
+            self.amount = self.SERVICE_PRICES[self.service_name]
+        super(SaloonOrder, self).save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.category} - {self.service_name} - ₹{self.amount} - {self.service_status}"
 
 
 class GymOrder(models.Model):

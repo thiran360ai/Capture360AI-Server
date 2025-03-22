@@ -281,3 +281,51 @@ def Emp_login(request):
         # Print the full traceback to debug the issue
         traceback.print_exc()
         return JsonResponse({'error': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+def get_monthly_attendance(request, user_id, month, year):
+    try:
+        # Ensure month and year are valid
+        month = int(month)
+        year = int(year)
+        if month < 1 or month > 12:
+            return JsonResponse({"error": "Invalid month. Must be between 1 and 12."}, status=400)
+
+        # Filter attendance records for the given user and month
+        attendance_records = Attendance.objects.filter(
+            user_id=user_id,
+            start_time__year=year,
+            start_time__month=month
+        )
+
+        # Calculate total worked hours in the given month
+        total_hours = attendance_records.aggregate(sum('total_hours'))['total_hours__sum'] or 0
+
+        # Format response
+        return JsonResponse({
+            "user_id": user_id,
+            "month": month,
+            "year": year,
+            "total_hours_present": round(total_hours, 2)
+        })
+
+    except ValueError:
+        return JsonResponse({"error": "Invalid month or year format."}, status=400)
+    
+
+class AllUsersAttendanceView(APIView):
+    def get(self, request):
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+
+        if not start_date or not end_date:
+            return Response({'error': 'Start date and End date are required'}, status=400)
+
+        attendance_data = (
+            Attendance.objects
+            .filter(start_time__date__gte=start_date, start_time__date__lte=end_date)
+            .values('user_id')
+            .annotate(total_hours=sum('total_hours'))
+        )
+
+        return Response({'attendance': list(attendance_data)})

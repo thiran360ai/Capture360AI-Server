@@ -183,7 +183,7 @@ def create_user_details(request):
     data = request.data.copy()
     data['membership'] = membership
     data['emblem_url'] = emblem_url
-    data['points'] = 0  # Start with 0 points
+    data['points'] = 200  # Start with 0 points
 
     serializer = UserDetailsSerializer(data=data)
     if serializer.is_valid():
@@ -274,7 +274,7 @@ def customer_login(request):
 
         if check_password(password, user.password):
             # ✅ Give 200 bonus points on login
-            user.points += 200  
+            # user.points += 200
             user.save()
 
             # ✅ Get emblem URL based on membership
@@ -294,9 +294,9 @@ def customer_login(request):
                 'success': True,
                 'user_id': user.id,
                 'username': user.name,
-                'membership': user.membership,
-                'emblem_url': emblem_url,
-                'points': user.points
+                # 'membership': user.membership,
+                # 'emblem_url': emblem_url,
+                # 'points': user.points
             }
 
             print(f"Response Data: {response_data}")  # Debug print
@@ -1291,3 +1291,8 @@ def update_task(request):
     # If the serializer is invalid, return errors
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+<<<<<<< HEAD
+
+
+=======
+>>>>>>> 1030f751e021cf9d19c69bf13cfbfc5dda3eb672

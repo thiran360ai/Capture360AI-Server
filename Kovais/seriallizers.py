@@ -25,7 +25,8 @@ class UserDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserDetails
         # fields = ['id', 'name', 'password', 'membership', 'subscribed', 'premium_amount']
-        fields = '_all_'
+        # fields = '_all_'
+        fields = ('name', 'membership', 'points', 'emblem_url','password')
 
 class SaloonOrdersSerializer(serializers.ModelSerializer):
     customer_name = serializers.CharField(source="customer_id.name", read_only=True)

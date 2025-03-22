@@ -116,7 +116,9 @@ INSTALLED_APPS = [
 
     # 'Trust',
     'Attendance',
-    'import_export'
+    'import_export',
+    'app',
+    
 ]
 
 MIDDLEWARE = [

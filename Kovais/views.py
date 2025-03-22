@@ -11,8 +11,8 @@ from django.contrib.auth.hashers import make_password, check_password
 from rest_framework.decorators import api_view
 from .seriallizers import *
 from .models import *
-import traceback, requests
-from asgiref.sync import sync_to_async, async_to_sync
+import traceback
+from asgiref.sync import sync_to_async
 from rest_framework.decorators import APIView
 
 
@@ -131,43 +131,6 @@ def delete_employee(request):
         return Response({'message': 'User deleted successfully'}, status=status.HTTP_200_OK)
     except Employee.DoesNotExist:
         return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-
-
-# @api_view(['POST'])
-# def customer_login(request):
-    """
-    API endpoint for customer login.
-
-    Accepts the following parameters in the request body:
-    - username: The username of the customer attempting to login.
-    - password: The password of the customer.
-
-    Returns a JSON response containing the message "login successfully" and the customer's username and membership if the login is successful.
-    Returns a JSON object with an error message if the login fails.
-
-    Returns:
-    - 200 OK: A JSON object with a success message, username, and membership if credentials are valid.
-    - 400 Bad Request: A JSON object with an error message if credentials are invalid.
-    - 500 Internal Server Error: A JSON object with an error message if an unexpected error occurs.
-    """
-    # try:
-    #     username = request.data.get('username')
-    #     password = request.data.get('password')
-
-    #     try:
-    #         user = UserDetails.objects.get(name=username)
-    #     except UserDetails.DoesNotExist:
-    #         return JsonResponse({'login': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
-    #     if check_password(password, user.password):
-    #         return JsonResponse({'Message': 'login successfully', 'user_id': user.id, 'username': user.name,
-    #                              'membership': user.membership}, status=status.HTTP_200_OK)
-    #     else:
-    #         return JsonResponse({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
-    # except Exception as e:
-
-    #     # Print the full traceback to debug the issue
-    #     traceback.print_exc()
-    #     return JsonResponse({'error': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['GET'])
@@ -1327,3 +1290,4 @@ def update_task(request):
 
     # If the serializer is invalid, return errors
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+

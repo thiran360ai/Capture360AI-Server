@@ -174,3 +174,4 @@ cython_debug/
 ../Attendance/migrations/0001_initial.py
 ../profile_utility/migrations/0001_initial.py
 ../Attendance/migrations/0001_initial.py
+../app/migrations/0001_initial.py

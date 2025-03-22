@@ -86,3 +86,12 @@ class TaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = Task
         fields = ['id', 'description', 'status', 'employee']
+
+
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Review
+        fields = ['id', 'customer_id', 'order_id', 'rating', 'comment', 'created_at']
+        read_only_fields = ['id', 'created_at']

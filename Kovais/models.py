@@ -62,7 +62,7 @@ class UserDetails(models.Model):
     )
 
     EMBLEM_URLS = {
-        'silver': 'https://postimg.cc/bsn3qPq7',
+        'silver': 'https://i.postimg.cc/65jSL6gp/pngtree-champion-silver-award-medals-ribbons-png-image-6563618.png',
         'gold': 'https://yourdomain.com/media/emblems/gold.png',
         'platinum': 'https://yourdomain.com/media/emblems/platinum.png',
     }
@@ -256,3 +256,16 @@ class Task(models.Model):
     assigned_to = models.CharField(max_length=255, null=True, blank=True)
     description = models.TextField()
     status = models.CharField(max_length=255, null=True, blank=True, default="pending")
+
+
+
+
+class Review(models.Model):
+    customer_id = models.ForeignKey(UserDetails, on_delete=models.CASCADE)
+    order_id = models.IntegerField()
+    rating = models.FloatField()
+    comment = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Review {self.id} - Rating: {self.rating}"

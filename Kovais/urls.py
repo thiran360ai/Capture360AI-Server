@@ -8,6 +8,8 @@ urlpatterns = [
     path('create-customer/', create_user_details),
     path('customer-login/', customer_login),
     path('total-users/', AsyncUserList.as_view()),
+    path('orders/',orders_by_user_id),
+    path('post-review/', submit_review),
 
     # employees
     

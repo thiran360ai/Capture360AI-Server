@@ -1291,8 +1291,46 @@ def update_task(request):
     # If the serializer is invalid, return errors
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-<<<<<<< HEAD
+
+@api_view(['GET'])
+def orders_by_user_id(request):
+    try:
+        user_param = request.query_params.get('user_id')
+        status_param = request.query_params.get('status')
+
+        if not user_param or not status_param:
+            return Response({'error': 'Both user_id and status parameters are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Fetch data from different models
+        hotel_orders = HotelOrder.objects.filter(customer_id=user_param, status=status_param)
+        gym_orders = GymOrder.objects.filter(customer_id=user_param, status=status_param)
+        spa_orders = SpaOrder.objects.filter(customer_id=user_param, status=status_param)
+        saloon_orders = SaloonOrder.objects.filter(customer_id=user_param, status=status_param)
+
+        # Serialize the data
+        hotel_data = HotelOrdersSerializer(hotel_orders, many=True).data
+        gym_data = GymOrderSerializer(gym_orders, many=True).data
+        spa_data = SpaOrdersSerializer(spa_orders, many=True).data
+        saloon_data = SaloonOrdersSerializer(saloon_orders, many=True).data
+
+        # Return response
+        return Response({
+            "hotel_orders": hotel_data,
+            "gym_orders": gym_data,
+            "spa_orders": spa_data,
+            "saloon_orders": saloon_data
+        }, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-=======
->>>>>>> 1030f751e021cf9d19c69bf13cfbfc5dda3eb672
+@api_view(['POST'])
+def submit_review(request):
+    serializer = ReviewSerializer(data=request.data)
+    
+    if serializer.is_valid():
+        serializer.save()
+        return Response({"message": "Review submitted successfully!", "data": serializer.data}, status=status.HTTP_201_CREATED)
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

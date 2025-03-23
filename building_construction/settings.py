@@ -39,7 +39,7 @@ SECRET_KEY = 'django-insecure-qy99_@e#dcu^cbt$=dazit$_*)5yz*)f_6cmkpxu9r-a9)iq90
 DEBUG = True
 
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1','api.capture360.ai', '262c-59-97-51-97.ngrok-free.app','192.168.1.55','192.168.1.36','59.97.51.97','192.168.1.33','c432-59-97-51-97.ngrok-free.app','capture360.ai','www.capture360.9ai',]
+ALLOWED_HOSTS = ['localhost', '127.0.0.1','api.capture360.ai', '11e1-2409-40f4-201c-1293-5d5-d14d-51a9-ff05.ngrok-free.app','192.168.1.55','192.168.1.36','59.97.51.97','192.168.1.33','9a7e-2409-40f4-201c-1293-8db2-f79e-87d0-63ff.ngrok-free.app','capture360.ai','www.capture360.9ai','192.168.1.37']
 
 
 CORS_ALLOW_HEADERS = [
@@ -60,7 +60,7 @@ CORS_ALLOW_HEADERS = [
 
 CORS_ALLOWED_ORIGINS = [
 
-    'https://262c-59-97-51-97.ngrok-free.app',
+    'https://9a7e-2409-40f4-201c-1293-8db2-f79e-87d0-63ff.ngrok-free.app',
 
     'http://192.168.1.33:8080',
     'https://api.capture360.ai',
@@ -97,6 +97,8 @@ CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins to simplify CORS configuratio
 LOGIN_REDIRECT_URL = '/dashboard/'  # Redirect users after login
 APPEND_SLASH = False
 
+# import os
+# os.environ["officeapp"] = "/opt/homebrew/lib/libgdal.dylib"
 
 
 
@@ -117,7 +119,8 @@ INSTALLED_APPS = [
     # 'debug_toolbar',
     # 'Trust',
 
-    'Attendance'
+    'Attendance',
+    'officeapp'
 ]
 
 MIDDLEWARE = [

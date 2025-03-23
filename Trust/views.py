@@ -7,6 +7,7 @@ from rest_framework import status
 from .serializers import *
 from .tasks import send_whatsapp_task
 
+
 @api_view(['POST'])
 def contact(request):
     serializer = ContactSerializer(data=request.data)

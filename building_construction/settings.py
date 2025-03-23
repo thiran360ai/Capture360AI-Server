@@ -116,7 +116,7 @@ INSTALLED_APPS = [
     'Kovais',
 #     'djoser',
     'corsheaders',
-    # 'debug_toolbar',
+
     # 'Trust',
 
     'Attendance',
@@ -132,7 +132,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
-#     "debug_toolbar.middleware.DebugToolbarMiddleware",
+    # "debug_toolbar.middleware.DebugToolbarMiddleware",
 ]
 
 ROOT_URLCONF = 'building_construction.urls'

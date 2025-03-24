@@ -39,7 +39,7 @@ SECRET_KEY = 'django-insecure-qy99_@e#dcu^cbt$=dazit$_*)5yz*)f_6cmkpxu9r-a9)iq90
 DEBUG = True
 
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1','api.capture360.ai', '11e1-2409-40f4-201c-1293-5d5-d14d-51a9-ff05.ngrok-free.app','192.168.1.55','192.168.1.36','59.97.51.97','192.168.1.33','9a7e-2409-40f4-201c-1293-8db2-f79e-87d0-63ff.ngrok-free.app','capture360.ai','www.capture360.9ai','192.168.1.37']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1','api.capture360.ai', '192.168.1.55','192.168.1.36','59.97.51.97','192.168.1.33','9a7e-2409-40f4-201c-1293-8db2-f79e-87d0-63ff.ngrok-free.app','capture360.ai','www.capture360.9ai','192.168.1.37','f158-2401-4900-9269-fea8-f59e-45e7-eb42-7a6c.ngrok-free.app']
 
 
 CORS_ALLOW_HEADERS = [
@@ -60,7 +60,7 @@ CORS_ALLOW_HEADERS = [
 
 CORS_ALLOWED_ORIGINS = [
 
-    'https://9a7e-2409-40f4-201c-1293-8db2-f79e-87d0-63ff.ngrok-free.app',
+    'https://f158-2401-4900-9269-fea8-f59e-45e7-eb42-7a6c.ngrok-free.app',
 
     'http://192.168.1.33:8080',
     'https://api.capture360.ai',
@@ -114,7 +114,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'profile_utility',
     'Kovais',
-#     'djoser',
+    'import_export',
     'corsheaders',
 
     # 'Trust',
@@ -223,6 +223,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
 # settings.py
+# MEDIA_URL = '/media/'
+# MEDIA_ROOT = os.path.join(BASE_DIR)
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR)
 

@@ -43,3 +43,5 @@ rawpy==0.22.0
 requests==2.32.3
 requests-oauthlib==2.0.0
 scipy==1.13.1
+djoser==2.2.3
+drf-yasg==1.21.8

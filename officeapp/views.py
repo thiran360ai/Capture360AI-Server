@@ -410,6 +410,10 @@ def haversine(lat1, lon1, lat2, lon2):
 
     return R * c  # Distance in meters
 
+from django.http import JsonResponse
+from django.utils import timezone
+import json
+
 @api_view(['POST'])
 def start_attendance(request):
     if request.method == 'POST':
@@ -421,7 +425,16 @@ def start_attendance(request):
 
             # ✅ Check if the device exists
             device = Device.objects.get(device_id=device_id)
+
+            # ✅ Ensure the device is active
+            if not device.is_active:
+                return JsonResponse({"error": "Device is inactive. Attendance cannot be started."}, status=403)
+
             employee = device.user  # Assuming 'user' field is linked to Employee
+
+            # ✅ Ensure the employee is active
+            if not employee.is_active:
+                return JsonResponse({"error": "Employee is inactive. Attendance cannot be started."}, status=403)
 
             # ✅ Ensure the user is linked to at least one organization
             if not employee.organizations.exists():

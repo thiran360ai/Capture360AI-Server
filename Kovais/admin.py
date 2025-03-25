@@ -10,16 +10,16 @@ class UserDetailsAdmin(admin.ModelAdmin):
     list_display= ['id','name','password','membership','subscribed','premium_amount']
 
 
-# @admin.register(SaloonOrder)
-# class SaloonOrdersAdmin(admin.ModelAdmin):
-#     list_display = ['id', 'customer_id', 'employee_id', 'order_type', 'category', 'services', 'payment_status', 'date', 'payment_type', 'time', 'amount', 'created_at', 'status']
-from django.contrib import admin
-from .models import SaloonOrder  # Ensure correct import
-
+@admin.register(SaloonOrder)
 class SaloonOrdersAdmin(admin.ModelAdmin):
-    list_display = ('id', 'customer_id', 'employee_id', 'category', 'service_name', 'amount', 'status', 'created_at')
+    list_display = ['id', 'customer_id', 'employee_id', 'order_type', 'category', 'services', 'payment_status', 'date', 'payment_type', 'time', 'amount', 'created_at', 'status']
+# from django.contrib import admin
+# from .models import SaloonOrder  # Ensure correct import
 
-admin.site.register(SaloonOrder, SaloonOrdersAdmin)
+# class SaloonOrdersAdmin(admin.ModelAdmin):
+#     list_display = ('id', 'customer_id', 'employee_id', 'category', 'service_name', 'amount', 'status', 'created_at')
+
+# admin.site.register(SaloonOrder, SaloonOrdersAdmin)
 
 
 @admin.register(GymOrder)

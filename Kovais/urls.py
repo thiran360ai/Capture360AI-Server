@@ -10,6 +10,7 @@ urlpatterns = [
     path('total-users/', AsyncUserList.as_view()),
     path('orders/',orders_by_user_id),
     path('post-review/', submit_review),
+    path('delete-booking/', delete_booking),
 
     # employees
     

@@ -96,85 +96,85 @@ class Booking(models.Model):
     bonus = models.ForeignKey(Bonus, on_delete=models.CASCADE)
 
 
-# class SaloonOrder(models.Model):
-#     customer_id = models.ForeignKey(UserDetails, on_delete=models.CASCADE, null=True, blank=True)
-#     employee_id = models.ForeignKey(Employee, on_delete=models.CASCADE, null=True, blank=True)
-#     order_type = models.CharField(max_length=255, null=True, blank=True)
-#     category = models.CharField(max_length=255, null=True, blank=True)
-#     services = models.TextField(null=True, blank=True)
-#     payment_status = models.CharField(max_length=255, null=True, blank=True, default='pending')
-#     payment_type = models.CharField(max_length=255, null=True, blank=True)
-#     amount = models.CharField(max_length=255, null=True, blank=True)
-#     date = models.DateField(null=True, blank=True)
-#     time = models.CharField(max_length=255, null=True, blank=True)
-#     created_at = models.DateTimeField(auto_now_add=True)
-#     status = models.CharField(max_length=255, null=True, blank=True)
-from django.db import models
-
 class SaloonOrder(models.Model):
-    CATEGORY_CHOICES = [
-        ('men', 'Men'),
-        ('women', 'Women'),
-        ('kids', 'Kids'),
-    ]
-
-    SERVICE_CHOICES = {
-        'men': [
-            ('haircut', 'Haircut'),
-            ('shave', 'Shave'),
-            ('hair_coloring', 'Hair Coloring'),
-        ],
-        'women': [
-            ('haircut', 'Haircut'),
-            ('facial', 'Facial'),
-            ('hair_coloring', 'Hair Coloring'),
-        ],
-        'kids': [
-            ('haircut', 'Haircut'),
-        ],
-    }
-
-    SERVICE_PRICES = {
-        'haircut': 300.00,
-        'shave': 150.00,
-        'hair_coloring': 500.00,
-        'facial': 700.00,
-    }
-
-    STATUS_CHOICES = [
-        ('available', 'Available'),
-        ('unavailable', 'Unavailable'),
-    ]
-
-    customer_id = models.ForeignKey('UserDetails', on_delete=models.CASCADE, null=True, blank=True)
-    employee_id = models.ForeignKey('Employee', on_delete=models.CASCADE, null=True, blank=True)
-
-    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, null=True, blank=True)
-    service_name = models.CharField(max_length=50, null=True, blank=True)
-    service_images = models.JSONField(default=list)  # Store multiple images
-    service_descriptions = models.JSONField(default=list)  # Store multiple descriptions
-
-    amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    payment_status = models.CharField(max_length=20, default='pending')
-    payment_type = models.CharField(max_length=50, null=True, blank=True)
-
-    service_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')  # ✅ New Field for Availability
-
+    customer_id = models.ForeignKey(UserDetails, on_delete=models.CASCADE, null=True, blank=True)
+    employee_id = models.ForeignKey(Employee, on_delete=models.CASCADE, null=True, blank=True)
+    order_type = models.CharField(max_length=255, null=True, blank=True)
+    category = models.CharField(max_length=255, null=True, blank=True)
+    services = models.TextField(null=True, blank=True)
+    payment_status = models.CharField(max_length=255, null=True, blank=True, default='pending')
+    payment_type = models.CharField(max_length=255, null=True, blank=True)
+    amount = models.CharField(max_length=255, null=True, blank=True)
     date = models.DateField(null=True, blank=True)
     time = models.CharField(max_length=255, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=255, null=True, blank=True)
+# from django.db import models
 
-    def save(self, *args, **kwargs):
-        """
-        Automatically set the price based on the selected service.
-        """
-        if self.service_name in self.SERVICE_PRICES:
-            self.amount = self.SERVICE_PRICES[self.service_name]
-        super(SaloonOrder, self).save(*args, **kwargs)
+# class SaloonOrder(models.Model):
+#     CATEGORY_CHOICES = [
+#         ('men', 'Men'),
+#         ('women', 'Women'),
+#         ('kids', 'Kids'),
+#     ]
 
-    def __str__(self):
-        return f"{self.category} - {self.service_name} - ₹{self.amount} - {self.service_status}"
+#     SERVICE_CHOICES = {
+#         'men': [
+#             ('haircut', 'Haircut'),
+#             ('shave', 'Shave'),
+#             ('hair_coloring', 'Hair Coloring'),
+#         ],
+#         'women': [
+#             ('haircut', 'Haircut'),
+#             ('facial', 'Facial'),
+#             ('hair_coloring', 'Hair Coloring'),
+#         ],
+#         'kids': [
+#             ('haircut', 'Haircut'),
+#         ],
+#     }
+
+#     SERVICE_PRICES = {
+#         'haircut': 300.00,
+#         'shave': 150.00,
+#         'hair_coloring': 500.00,
+#         'facial': 700.00,
+#     }
+
+#     STATUS_CHOICES = [
+#         ('available', 'Available'),
+#         ('unavailable', 'Unavailable'),
+#     ]
+
+#     customer_id = models.ForeignKey('UserDetails', on_delete=models.CASCADE, null=True, blank=True)
+#     employee_id = models.ForeignKey('Employee', on_delete=models.CASCADE, null=True, blank=True)
+
+#     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, null=True, blank=True)
+#     service_name = models.CharField(max_length=50, null=True, blank=True)
+#     service_images = models.JSONField(default=list)  # Store multiple images
+#     service_descriptions = models.JSONField(default=list)  # Store multiple descriptions
+
+#     amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+#     payment_status = models.CharField(max_length=20, default='pending')
+#     payment_type = models.CharField(max_length=50, null=True, blank=True)
+
+#     service_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')  # ✅ New Field for Availability
+
+#     date = models.DateField(null=True, blank=True)
+#     time = models.CharField(max_length=255, null=True, blank=True)
+#     created_at = models.DateTimeField(auto_now_add=True)
+#     status = models.CharField(max_length=255, null=True, blank=True)
+
+#     def save(self, *args, **kwargs):
+#         """
+#         Automatically set the price based on the selected service.
+#         """
+#         if self.service_name in self.SERVICE_PRICES:
+#             self.amount = self.SERVICE_PRICES[self.service_name]
+#         super(SaloonOrder, self).save(*args, **kwargs)
+
+#     def __str__(self):
+#         return f"{self.category} - {self.service_name} - ₹{self.amount} - {self.service_status}"
 
 
 class GymOrder(models.Model):

@@ -61,7 +61,7 @@ def login_view(request):
                 'user_id': user.id,
                 'email': user.email,
                 'role': user.role,
-                'organization': user.organization.name,
+                # 'organization': user.organization.name,
                 'device_id': user.device_id
             }, status=status.HTTP_200_OK)
         else:
@@ -206,33 +206,19 @@ class EmployeeLoginView(View):
         try:
             data = json.loads(request.body)
             email = data.get('email')
-            employee_id = data.get('employee_id')
-            organization_key = data.get('organization')
             password = data.get('password')
-            device_id = data.get('device_id')
 
-            if not all([email, employee_id, organization_key, password, device_id]):
-                return JsonResponse({"error": "All fields are required"}, status=400)
-
-            # Verify Organization
-            organization = Organization.objects.filter(key=organization_key).first()
-            if not organization:
-                return JsonResponse({"error": "Invalid organization key"}, status=404)
+            if not email or not password:
+                return JsonResponse({"error": "Email and password are required"}, status=400)
 
             # Verify Employee
-            employee = Employee.objects.filter(
-                email=email,
-                employee_id=employee_id,
-                organization=organization,
-                is_active=True
-            ).first()
-
+            employee = Employee.objects.filter(email=email, is_active=True).first()
             if not employee:
                 return JsonResponse({"error": "Invalid credentials or inactive account"}, status=404)
 
-            # Verify Password with Custom Authentication
-            user = authenticate(request, email=email, password=password)
-            if user:
+            # Verify Password
+            from django.contrib.auth.hashers import check_password
+            if check_password(password, employee.password):
                 return JsonResponse({
                     "message": "Login successful",
                     "employee_id": employee.employee_id,

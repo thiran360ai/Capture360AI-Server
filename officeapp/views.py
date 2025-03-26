@@ -651,8 +651,11 @@ class ActiveDevicesView(View):
             # Prepare Response
             devices_data = [
                 {
+                    
+                    
+                    
                     "device_id": device.device_id,
-                    "user": device.user.name,
+                    "user": device.user.id,
                     "email": device.user.email,
                     "organization": list(device.user.organizations.values_list("name", flat=True)),
                     "is_active": device.is_active

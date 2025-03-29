@@ -28,7 +28,7 @@ urlpatterns = [
     path('tiran_attendance/',include('Attendance.urls')),
     path('attence/',include('officeapp.urls')),
     path('gateway/',include('gateway.urls')),
-    path('bike/',include('bike.urls')),
+   
     
 
 #     path('Trust/',include('Trust.urls')),

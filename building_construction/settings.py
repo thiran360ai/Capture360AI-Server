@@ -120,7 +120,8 @@ INSTALLED_APPS = [
     # 'Trust',
 
     'Attendance',
-    'officeapp'
+    'officeapp',
+    'gateway',
 ]
 
 MIDDLEWARE = [

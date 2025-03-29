@@ -171,3 +171,4 @@ Attendance/migrations/
 profile_utility/migrations/
 app/migrations/
 officeapp/migrations/
+gateway/migrations/

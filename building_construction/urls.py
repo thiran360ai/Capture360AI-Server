@@ -26,7 +26,9 @@ urlpatterns = [
     path('auth/jwt/', include('djoser.urls.jwt')),  # Use a different path for JWT authentication
     path('kovais/',include('Kovais.urls')),
     path('tiran_attendance/',include('Attendance.urls')),
-    path('attence/',include('officeapp.urls'))
+    path('attence/',include('officeapp.urls')),
+    path('gateway/',include('gateway.urls')),
+   
     
 
 #     path('Trust/',include('Trust.urls')),

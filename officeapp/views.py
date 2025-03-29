@@ -61,7 +61,7 @@ def login_view(request):
                 'user_id': user.id,
                 'email': user.email,
                 'role': user.role,
-                'organization': user.organization.name,
+                # 'organization': user.organization.name,
                 'device_id': user.device_id
             }, status=status.HTTP_200_OK)
         else:
@@ -170,6 +170,46 @@ class InactiveEmployeeListView(View):
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
 
+@method_decorator(csrf_exempt, name='dispatch')
+class InactiveEmployeesView(View):
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+            organization_keys = data.get('organizations', [])
+
+            if not organization_keys:
+                return JsonResponse({"error": "At least one organization key is required"}, status=400)
+
+            # Get Organizations
+            organizations = Organization.objects.filter(key__in=organization_keys)
+            if not organizations.exists():
+                return JsonResponse({"error": "No matching organizations found"}, status=404)
+
+            # Get Inactive Employees in these Organizations
+            inactive_employees = Employee.objects.filter(
+                organizations__in=organizations, 
+                is_active=False
+            ).distinct()
+
+            # Prepare Response
+            employees_data = [
+                {
+                    "id":emp.id,
+                    "employee_id": emp.employee_id,
+                    "name": emp.name,
+                    "email": emp.email,
+                    "role": emp.role,
+                    "organizations": list(emp.organizations.values_list("name", flat=True))
+                }
+                for emp in inactive_employees
+            ]
+
+            return JsonResponse({"inactive_employees": employees_data}, status=200)
+
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON data"}, status=400)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
 
 @method_decorator(csrf_exempt, name='dispatch')
 class UpdateEmployeeStatusView(View):
@@ -206,33 +246,19 @@ class EmployeeLoginView(View):
         try:
             data = json.loads(request.body)
             email = data.get('email')
-            employee_id = data.get('employee_id')
-            organization_key = data.get('organization')
             password = data.get('password')
-            device_id = data.get('device_id')
 
-            if not all([email, employee_id, organization_key, password, device_id]):
-                return JsonResponse({"error": "All fields are required"}, status=400)
-
-            # Verify Organization
-            organization = Organization.objects.filter(key=organization_key).first()
-            if not organization:
-                return JsonResponse({"error": "Invalid organization key"}, status=404)
+            if not email or not password:
+                return JsonResponse({"error": "Email and password are required"}, status=400)
 
             # Verify Employee
-            employee = Employee.objects.filter(
-                email=email,
-                employee_id=employee_id,
-                organization=organization,
-                is_active=True
-            ).first()
-
+            employee = Employee.objects.filter(email=email, is_active=True).first()
             if not employee:
                 return JsonResponse({"error": "Invalid credentials or inactive account"}, status=404)
 
-            # Verify Password with Custom Authentication
-            user = authenticate(request, email=email, password=password)
-            if user:
+            # Verify Password
+            from django.contrib.auth.hashers import check_password
+            if check_password(password, employee.password):
                 return JsonResponse({
                     "message": "Login successful",
                     "employee_id": employee.employee_id,
@@ -598,3 +624,294 @@ def stop_attendance(request):
 
     except Attendance.DoesNotExist:
         return JsonResponse({"error": "No active attendance found"}, status=400)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class ActiveDevicesView(View):
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+            organization_keys = data.get('organizations', [])
+            is_active = data.get('is_active', True)  # Default: Active devices only
+
+            if not organization_keys:
+                return JsonResponse({"error": "At least one organization key is required"}, status=400)
+
+            # Get Organizations
+            organizations = Organization.objects.filter(key__in=organization_keys)
+            if not organizations.exists():
+                return JsonResponse({"error": "No matching organizations found"}, status=404)
+
+            # Get Employees in these Organizations
+            employees = Employee.objects.filter(organizations__in=organizations).distinct()
+
+            # Get Devices linked to these Employees and Filter by is_active
+            devices = Device.objects.filter(user__in=employees, is_active=is_active)
+
+            # Prepare Response
+            devices_data = [
+                {
+                    
+                    
+                    
+                    "device_id": device.device_id,
+                    "user": device.user.id,
+                    "email": device.user.email,
+                    "organization": list(device.user.organizations.values_list("name", flat=True)),
+                    "is_active": device.is_active
+                }
+                for device in devices
+            ]
+
+            return JsonResponse({"devices": devices_data}, status=200)
+
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON data"}, status=400)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+
+from django.http import JsonResponse
+from django.views import View
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+import json
+from .models import Employee
+
+@method_decorator(csrf_exempt, name='dispatch')
+class CheckUserActiveStatusView(View):
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+            user_id = data.get('user_id')
+
+            if not user_id:
+                return JsonResponse({"error": "User ID is required"}, status=400)
+
+            # Check if the user exists
+            employee = Employee.objects.filter(id=user_id).first()
+
+            if not employee:
+                return JsonResponse({"error": "User not found"}, status=404)
+
+            # Return active status
+            return JsonResponse({
+                "user_id": employee.id,
+                "name": employee.name,
+                "email": employee.email,
+                "is_active": employee.is_active
+            }, status=200)
+
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON data"}, status=400)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+
+from django.http import JsonResponse
+from django.views import View
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+import json
+from .models import Employee
+
+@method_decorator(csrf_exempt, name='dispatch')
+class UpdateUserActiveStatusView(View):
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+            user_id = data.get('user_id')
+            is_active = data.get('is_active')
+
+            if user_id is None or is_active is None:
+                return JsonResponse({"error": "User ID and is_active field are required"}, status=400)
+
+            # Find user
+            employee = Employee.objects.filter(id=user_id).first()
+
+            if not employee:
+                return JsonResponse({"error": "User not found"}, status=404)
+
+            # Update is_active status
+            employee.is_active = is_active
+            employee.save()
+
+            return JsonResponse({
+                "message": "User active status updated successfully",
+                "user_id": employee.id,
+                "name": employee.name,
+                "is_active": employee.is_active
+            }, status=200)
+
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON data"}, status=400)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+from django.http import JsonResponse
+from django.views import View
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+import json
+from .models import Device, Employee
+
+@method_decorator(csrf_exempt, name='dispatch')
+class UpdateDeviceActiveStatusView(View):
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+            user_id = data.get('user_id')
+            device_id = data.get('device_id')
+            is_active = data.get('is_active')
+
+            if not all([user_id, device_id, is_active is not None]):
+                return JsonResponse({"error": "user_id, device_id, and is_active field are required"}, status=400)
+
+            # Check if the user exists
+            employee = Employee.objects.filter(id=user_id).first()
+            if not employee:
+                return JsonResponse({"error": "User not found"}, status=404)
+
+            # Check if the device exists for the given user
+            device = Device.objects.filter(device_id=device_id, user=employee).first()
+            if not device:
+                return JsonResponse({"error": "Device not found for this user"}, status=404)
+
+            # Update is_active status
+            device.is_active = is_active
+            device.save()
+
+            return JsonResponse({
+                "message": "Device active status updated successfully",
+                "device_id": device.device_id,
+                "user_id": employee.id,
+                "user_name": employee.name,
+                "is_active": device.is_active
+            }, status=200)
+
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON data"}, status=400)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+
+from django.http import JsonResponse
+from django.views import View
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+import json
+from .models import Employee
+
+@method_decorator(csrf_exempt, name='dispatch')
+class CheckEmployeeStatusView(View):
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+            email = data.get('email')
+
+            if not email:
+                return JsonResponse({"error": "Email is required"}, status=400)
+
+            # Check if the employee exists
+            employee = Employee.objects.filter(email=email).first()
+            if not employee:
+                return JsonResponse({"error": "User not found"}, status=404)
+
+            return JsonResponse({
+                "email": employee.email,
+                "name": employee.name,
+                "is_active": employee.is_active
+            }, status=200)
+
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON data"}, status=400)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+
+from django.http import JsonResponse
+from django.views import View
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+import json
+from .models import Device
+
+@method_decorator(csrf_exempt, name='dispatch')
+class CheckDeviceStatusView(View):
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+            device_id = data.get('device_id')
+
+            if not device_id:
+                return JsonResponse({"error": "Device ID is required"}, status=400)
+
+            # Check if the device exists
+            device = Device.objects.filter(device_id=device_id).first()
+            if not device:
+                return JsonResponse({"error": "Device not found"}, status=404)
+
+            return JsonResponse({
+                "device_id": device.device_id,
+                "user_id": device.user.id,
+                "user_name": device.user.name,
+                "user_email": device.user.email,
+                "is_active": device.is_active
+            }, status=200)
+
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON data"}, status=400)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+from django.http import JsonResponse
+from django.views import View
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+import json
+from datetime import datetime
+from .models import Employee, Attendance
+
+@method_decorator(csrf_exempt, name='dispatch')
+class GetTotalHoursView(View):
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+            email = data.get('email')
+            from_date = data.get('from_date')
+            end_date = data.get('end_date')
+
+            if not email or not from_date or not end_date:
+                return JsonResponse({"error": "Email, from_date, and end_date are required"}, status=400)
+
+            # Convert string dates to datetime objects
+            try:
+                from_date = datetime.strptime(from_date, "%Y-%m-%d").date()
+                end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+            except ValueError:
+                return JsonResponse({"error": "Invalid date format. Use YYYY-MM-DD"}, status=400)
+
+            # Verify Employee
+            employee = Employee.objects.filter(email=email).first()
+            if not employee:
+                return JsonResponse({"error": "Employee not found"}, status=404)
+
+            # Fetch attendance records within date range
+            attendance_records = Attendance.objects.filter(
+                employee=employee, 
+                date__range=[from_date, end_date]
+            )
+
+            total_hours = sum(record.total_hours for record in attendance_records)
+
+            return JsonResponse({
+                "employee_id": employee.id,
+                "employee_name": employee.name,
+                "email": employee.email,
+                "total_hours": total_hours
+            }, status=200)
+
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON data"}, status=400)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)

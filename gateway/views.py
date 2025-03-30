@@ -1,11 +1,11 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from django.contrib.auth import get_user_model
-from .models import Device, GPSData
-from .serializers import CustomUserSerializer, DeviceSerializer, GPSDataSerializer
 
-User = get_user_model()
+from .models import Device, GPSData,CustomUser
+from .serializers import CustomUserSerializer, DeviceSerializer, GPSDataSerializer
+from django.contrib.auth.hashers import make_password, check_password
+
 
 @api_view(["POST"])
 def create_user(request):
@@ -14,7 +14,9 @@ def create_user(request):
     """
     serializer = CustomUserSerializer(data=request.data)
     if serializer.is_valid():
-        serializer.save()
+        serializer.validated_data['password'] = make_password(serializer.validated_data['password'])  # Hash the password before saving
+        user = CustomUser.objects.create(**serializer.validated_data)
+        # serializer.save()
         return Response({"message": "User created successfully", "data": serializer.data}, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -146,7 +148,8 @@ def login_view(request):
         if not email:
             return Response({"error": "Email parameter is required"}, status=status.HTTP_400_BAD_REQUEST)
         
-        user = User.objects.filter(email=email).first()
+        user = CustomUser.objects.filter(email=email).first()
+        print(user)
         if user:
             devices = list(Device.objects.filter(user=user).values_list("device", flat=True))
             return Response({"email": email, "devices": devices}, status=status.HTTP_200_OK)
@@ -155,11 +158,12 @@ def login_view(request):
     elif request.method == "POST":
         identifier = request.data.get("identifier")  # Can be username or email
         password = request.data.get("password")
-
+        print(identifier,password)
         if not identifier or not password:
             return Response({"error": "Both identifier and password are required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        user = User.objects.filter(email=identifier).first() if "@" in identifier else User.objects.filter(username=identifier).first()
+        user = CustomUser.objects.filter(email=identifier).first() if "@" in identifier else CustomUser.objects.filter(username=identifier).first()
+        print(user)
         if user and user.check_password(password):
             token, _ = Token.objects.get_or_create(user=user)
             return Response({
@@ -173,3 +177,65 @@ def login_view(request):
             }, status=status.HTTP_200_OK)
 
         return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+
+from rest_framework.permissions import AllowAny
+from rest_framework.decorators import api_view, permission_classes
+
+
+from rest_framework.permissions import AllowAny
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import get_user_model
+from .serializers import CustomUserSerializer  # Ensure correct import
+
+# CustomUser = get_user_model()  # Get custom user model dynamically
+
+@permission_classes([AllowAny])
+@api_view(['POST'])
+def login_user(request):
+    try:
+        email = request.data.get('email')
+        password = request.data.get('password')
+        print(email,password)
+        if not email or not password:
+            return Response({"detail": "Email and password are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Normalize email and fetch user
+        user = CustomUser.objects.filter(email__iexact=email).first()
+        # user = CustomUser.objects.filter(email=email).first()  # Without `iexact
+        print(user)
+        if not user:
+            return Response({"detail": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        # Check password (Ensure passwords are hashed)
+        if not user.check_password(password):
+            print('error')
+            return Response({"detail": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        # Generate JWT tokens
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
+        refresh_token = str(refresh)
+
+        # Serialize user data
+        serializer = CustomUserSerializer(user)
+
+        # Return response
+        response_data = {
+            "access": access_token,
+            "refresh": refresh_token,
+            "success": "Login successful",
+            "user_id": user.id,
+            "user": serializer.data,  # Include user data
+            "status": "success"
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response(
+            {"error": "Internal server error", "detail": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )

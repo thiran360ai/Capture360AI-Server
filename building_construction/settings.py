@@ -118,7 +118,7 @@ INSTALLED_APPS = [
     'corsheaders',
 
     # 'Trust',
-
+    'bike',
     'Attendance',
     'officeapp',
     'gateway',
@@ -155,6 +155,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'building_construction.wsgi.application'
+AUTH_USER_MODEL = 'bike.UserProfile'  # Replace 'yourapp' with your actual app name
 
 
 # Database

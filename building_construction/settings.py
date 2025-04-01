@@ -59,7 +59,7 @@ CORS_ALLOW_HEADERS = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-
+    'http://localhost:5173',
     'https://f158-2401-4900-9269-fea8-f59e-45e7-eb42-7a6c.ngrok-free.app',
     'http://localhost:5173',
     'http://192.168.1.33:8080',

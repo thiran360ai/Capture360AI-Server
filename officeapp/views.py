@@ -439,6 +439,12 @@ def haversine(lat1, lon1, lat2, lon2):
 from django.http import JsonResponse
 from django.utils import timezone
 import json
+from django.utils.timezone import now
+import json
+from django.http import JsonResponse
+from rest_framework.decorators import api_view
+from .models import Attendance, Device
+from .utils import haversine  # Assuming you have a haversine function
 
 @api_view(['POST'])
 def start_attendance(request):
@@ -476,17 +482,20 @@ def start_attendance(request):
                         # ✅ Start Attendance
                         today_attendance, created = Attendance.objects.get_or_create(
                             employee=employee,
-                            date=timezone.now().date(),
+                            date=now().date(),
                             defaults={'logs': json.dumps([]), 'total_hours': 0}
                         )
 
                         logs = json.loads(today_attendance.logs)
-                        logs.append({"action": "start", "time": str(timezone.now())})
+                        logs.append({"action": "start", "time": now().strftime("%Y-%m-%d %H:%M:%S")})  # Include seconds
 
                         today_attendance.logs = json.dumps(logs)
                         today_attendance.save()
 
-                        return JsonResponse({"message": "Attendance started successfully"}, status=200)
+                        return JsonResponse({
+                            "message": "Attendance started successfully",
+                            "timestamp": now().strftime("%Y-%m-%d %H:%M:%S")  # Include seconds in response
+                        }, status=200)
 
             return JsonResponse({"error": "You are too far from all assigned organizations."}, status=400)
 
@@ -495,7 +504,6 @@ def start_attendance(request):
 
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
-
 
 # @api_view(['POST'])
 # def start_attendance(request):
@@ -534,6 +542,33 @@ from rest_framework.decorators import api_view
 from .models import Attendance
 
 # Pause Attendance
+# @api_view(['POST'])
+# def pause_attendance(request):
+#     try:
+#         data = json.loads(request.body)
+#         device_id = data.get('device_id')
+
+#         attendance = Attendance.objects.get(
+#             employee__device__device_id=device_id,
+#             date=timezone.now().date()
+#         )
+
+#         logs = json.loads(attendance.logs)
+#         logs.append({"action": "pause", "time": str(timezone.now())})
+
+#         attendance.logs = json.dumps(logs)
+#         attendance.save()
+
+#         return JsonResponse({"message": "Attendance paused successfully"}, status=200)
+
+#     except Attendance.DoesNotExist:
+#         return JsonResponse({"error": "No active attendance found"}, status=400)
+from django.utils.timezone import now
+import json
+from django.http import JsonResponse
+from rest_framework.decorators import api_view
+from .models import Attendance
+
 @api_view(['POST'])
 def pause_attendance(request):
     try:
@@ -542,16 +577,16 @@ def pause_attendance(request):
 
         attendance = Attendance.objects.get(
             employee__device__device_id=device_id,
-            date=timezone.now().date()
+            date=now().date()
         )
 
         logs = json.loads(attendance.logs)
-        logs.append({"action": "pause", "time": str(timezone.now())})
+        logs.append({"action": "pause", "time": now().strftime("%Y-%m-%d %H:%M:%S")})  # Including seconds
 
         attendance.logs = json.dumps(logs)
         attendance.save()
 
-        return JsonResponse({"message": "Attendance paused successfully"}, status=200)
+        return JsonResponse({"message": "Attendance paused successfully", "timestamp": now().strftime("%Y-%m-%d %H:%M:%S")}, status=200)
 
     except Attendance.DoesNotExist:
         return JsonResponse({"error": "No active attendance found"}, status=400)

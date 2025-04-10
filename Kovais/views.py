@@ -42,7 +42,7 @@ def users(request):
         return Response(serializer.data)
 
 
-@api_view(['POST', 'GET'])
+@api_view(['POST'])
 def create_Employee(request):
     """
     API endpoint to create a new employee.
@@ -71,12 +71,7 @@ def create_Employee(request):
                              'success': serializer.data['success']}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    elif request.method == 'GET':
-        # Return a response for GET request if needed
-        # Example: Return a list of employees (or whatever data makes sense for your app)
-        employees = Employee.objects.all()
-        serializer = EmployeeSerializer(employees, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    
 
     # In case a request method other than POST or GET is sent, you could return a method not allowed response.
     return Response({'message': 'Method Not Allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -206,49 +201,50 @@ import traceback
 # from .models import Employee  # Replace with your actual model import
 
 
-# @api_view(['POST'])
-# def Emp_login(request):
-#     """
-#     API endpoint for employee login.
+@api_view(['POST'])
+def Emp_login(request):
+    """
+    API endpoint for employee login.
 
-#     Accepts the following parameters in the request body:
-#     - email: The email of the employee attempting to login.
-#     - password: The password of the employee.
+    Accepts the following parameters in the request body:
+    - email: The email of the employee attempting to login.
+    - password: The password of the employee.
 
-#     Returns a JSON response containing a message and employee details if the login is successful.
-#     Returns a JSON object with an error message if the login fails.
+    Returns a JSON response containing a message and employee details if the login is successful.
+    Returns a JSON object with an error message if the login fails.
 
-#     Returns:
-#     - 200 OK: A JSON object with a success message, employee ID, username, and role if credentials are valid.
-#     - 400 Bad Request: A JSON object with an error message if credentials are invalid.
-#     - 500 Internal Server Error: A JSON object with an error message if an unexpected error occurs.
-#     """
+    Returns:
+    - 200 OK: A JSON object with a success message, employee ID, username, and role if credentials are valid.
+    - 400 Bad Request: A JSON object with an error message if credentials are invalid.
+    - 500 Internal Server Error: A JSON object with an error message if an unexpected error occurs.
+    """
 
-#     try:
-#         email = request.data.get('email')
-#         password = request.data.get('password')
+    try:
+        email = request.data.get('email')
+        password = request.data.get('password')
 
-#         try:
-#             user = Employee.objects.get(email=email)
-#         except Employee.DoesNotExist:
-#             return JsonResponse({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            user = Employee.objects.get(email=email)
+        except Employee.DoesNotExist:
+            return JsonResponse({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
 
-#         if check_password(password, user.password):
-#             # Change success to True if password is matched
-#             return JsonResponse({
-#                 'Message': 'Login successfully',
-#                 'success': True,  # Set success to True
-#                 'user_id': user.id,
-#                 'username': user.username,
-#                 'role': user.role
-#             }, status=status.HTTP_200_OK)
-#         else:
-#             return JsonResponse({'error': 'Invalid credentials', 'success': False}, status=status.HTTP_400_BAD_REQUEST)
+        if check_password(password, user.password):
+            # Change success to True if password is matched
+            return JsonResponse({
+                'Message': 'Login successfully',
+                'success': True,  # Set success to True
+                'user_id': user.id,
+                'username': user.username,
+                'role': user.role
+            }, status=status.HTTP_200_OK)
+        else:
+            return JsonResponse({'error': 'Invalid credentials', 'success': False}, status=status.HTTP_400_BAD_REQUEST)
 
-#     except Exception as e:
-#         # Print the full traceback to debug the issue
-#         traceback.print_exc()
-#         return JsonResponse({'error': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    except Exception as e:
+        # Print the full traceback to debug the issue
+        traceback.print_exc()
+        return JsonResponse({'error': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
 import traceback
 from django.contrib.auth.hashers import check_password
 from django.utils.timezone import now

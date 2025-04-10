@@ -13,7 +13,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
         model = Employee
         # fields = ['id', 'username', 'password', 'mobile', 'email', 'role', 'success', 'location', 'first_name',
                 #   'last_name', 'success']
-        fields = '_all_'
+        fields = '__all__'
 
 class TotalEmployeeSerializer(serializers.ModelSerializer):
     class Meta:

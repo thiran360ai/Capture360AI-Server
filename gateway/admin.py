@@ -15,5 +15,5 @@ class DeviceAdmin(admin.ModelAdmin):
 
 @admin.register(GPSData)
 class GPSDataAdmin(admin.ModelAdmin):
-    list_display = ("device", "latitude", "longitude", "timestamp")
+    list_display = ("device", "location", "timestamp")
 

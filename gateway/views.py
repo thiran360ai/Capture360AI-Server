@@ -239,3 +239,56 @@ def login_user(request):
             {"error": "Internal server error", "detail": str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from django.utils import timezone
+from .models import GPSData, Device
+from django.db.models import Q
+import datetime
+
+@api_view(['POST'])
+def save_gps_data(request):
+    device_id = request.data.get('device_id')
+    latitude = request.data.get('latitude')
+    longitude = request.data.get('longitude')
+
+    if not all([device_id, latitude, longitude]):
+        return Response({"error": "device_id, latitude and longitude are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        device = Device.objects.get(id=device_id)
+    except Device.DoesNotExist:
+        return Response({"error": "Device not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    now = timezone.now()
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    today_end = today_start + datetime.timedelta(days=1)
+
+    # Check if GPSData already exists for this device for today
+    gps_entry = GPSData.objects.filter(
+        device=device,
+        timestamp__gte=today_start,
+        timestamp__lt=today_end
+    ).first()
+
+    location_data = {
+        "latitude": float(latitude),
+        "longitude": float(longitude),
+        "timestamp": now.isoformat()
+    }
+
+    if gps_entry:
+        gps_entry.location.append(location_data)
+        gps_entry.save()
+    else:
+        GPSData.objects.create(
+            device=device,
+            location=[location_data],  # create new list
+            timestamp=now
+        )
+
+    return Response({"message": "GPS data saved successfully"}, status=status.HTTP_201_CREATED)
+

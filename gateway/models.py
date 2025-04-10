@@ -38,8 +38,10 @@ class Device(models.Model):
 
 class GPSData(models.Model):
     device = models.ForeignKey(Device, on_delete=models.CASCADE,blank=True,null=True)
-    latitude = models.FloatField()
-    longitude = models.FloatField()
+    # latitude = models.FloatField()
+    # longitude = models.FloatField()
+    
+    location = models.JSONField(null=True, blank=True)
     timestamp = models.DateTimeField(default=timezone.now)
 
  

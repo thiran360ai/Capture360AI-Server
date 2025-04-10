@@ -29,6 +29,7 @@ urlpatterns = [
     path('attence/',include('officeapp.urls')),
     path('gateway/',include('gateway.urls')),
     path('bike/',include('bike.urls')),
+    path('property/',include('app.urls')),
     
 
 #     path('Trust/',include('Trust.urls')),

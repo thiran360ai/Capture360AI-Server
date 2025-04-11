@@ -292,3 +292,10 @@ def save_gps_data(request):
 
     return Response({"message": "GPS data saved successfully"}, status=status.HTTP_201_CREATED)
 
+
+
+@api_view(['GET'])
+def get_devices(request):
+    device = GPSData.objects.all()
+    serializer = GPSDataSerializer(device, many=True)
+    return Response(serializer.data, status = status.HTTP_200_OK)

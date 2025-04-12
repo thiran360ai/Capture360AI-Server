@@ -39,7 +39,7 @@ SECRET_KEY = 'django-insecure-qy99_@e#dcu^cbt$=dazit$_*)5yz*)f_6cmkpxu9r-a9)iq90
 DEBUG = True
 
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1','api.capture360.ai', '983c-2409-408d-3d81-4ff1-c8fc-c224-c8ad-ae6b.ngrok-free.app','192.168.1.55','192.168.1.36','59.97.51.97','192.168.1.33','c432-59-97-51-97.ngrok-free.app','capture360.ai','www.capture360.9ai',]
+ALLOWED_HOSTS = ['localhost', '127.0.0.1','api.capture360.ai', '192.168.1.55','192.168.1.36','59.97.51.97','192.168.1.33','3379-59-97-51-97.ngrok-free.app','capture360.ai','www.capture360.9ai','192.168.1.37','f158-2401-4900-9269-fea8-f59e-45e7-eb42-7a6c.ngrok-free.app','localhost:5173']
 
 
 CORS_ALLOW_HEADERS = [
@@ -59,8 +59,9 @@ CORS_ALLOW_HEADERS = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-
-    'https://983c-2409-408d-3d81-4ff1-c8fc-c224-c8ad-ae6b.ngrok-free.app',
+    'http://localhost:5173',
+   'https://3379-59-97-51-97.ngrok-free.app',
+    'http://localhost:5173',
     'http://192.168.1.33:8080',
     'https://api.capture360.ai',
     'http://api.capture360.ai',
@@ -96,6 +97,8 @@ CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins to simplify CORS configuratio
 LOGIN_REDIRECT_URL = '/dashboard/'  # Redirect users after login
 APPEND_SLASH = False
 
+# import os
+# os.environ["officeapp"] = "/opt/homebrew/lib/libgdal.dylib"
 
 
 
@@ -111,14 +114,14 @@ INSTALLED_APPS = [
     'rest_framework',
     'profile_utility',
     'Kovais',
-#     'djoser',
+    'import_export',
     'corsheaders',
 
-    # 'Trust',
-    'Attendance',
-    'import_export',
     'app',
-    
+    'bike',
+    'Attendance',
+    'officeapp',
+    'gateway',
 ]
 
 MIDDLEWARE = [
@@ -152,6 +155,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'building_construction.wsgi.application'
+AUTH_USER_MODEL = 'bike.UserProfile'  # Replace 'yourapp' with your actual app name
 
 
 # Database
@@ -217,25 +221,34 @@ USE_I18N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.1/howto/static-files/
 
-# settings.py
+
+# MEDIA_URL = '/media/'
+# MEDIA_ROOT = os.path.join(BASE_DIR)
+
+# STATIC_URL = 'static/'
+# STATIC_URL = 'static/'
+#MEDIA_ROOT=os.path.join(BASE_DIR,'image')
+# MEDIA_URL='/images/'
+# MEDIA_ROOT=BASE_DIR/'static'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR)
 
 STATIC_URL = 'static/'
 STATIC_URL = 'static/'
-#MEDIA_ROOT=os.path.join(BASE_DIR,'image')
-# MEDIA_URL='/images/'
-# MEDIA_ROOT=BASE_DIR/'static'
 
-# STATICFILES_DIRS=[
-#     BASE_DIR/'static'
-# ]
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+STATIC_URL = '/static/'
+# STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+
+# Remove or comment out this line if not needed
+# STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')  # Add this if missing
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

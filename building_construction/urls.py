@@ -24,12 +24,16 @@ urlpatterns = [
     path('building/', include('profile_utility.urls')),
     path('auth/', include('djoser.urls')),  # Keep one set of authentication URLs
     path('auth/jwt/', include('djoser.urls.jwt')),  # Use a different path for JWT authentication
-    path('kovais/', include('Kovais.urls')),
-    path('thiran_attendance/', include('Attendance.urls')),
-    path('app/', include('app.urls')),
-    # path('ecomapp/', include('ecomapp.urls'))   
- # path('Trust/',include('Trust.urls')),
+    path('kovais/',include('Kovais.urls')),
+    path('tiran_attendance/',include('Attendance.urls')),
+    path('attence/',include('officeapp.urls')),
+    path('gateway/',include('gateway.urls')),
+    path('bike/',include('bike.urls')),
+    path('property/',include('app.urls')),
+    
+
+#     path('Trust/',include('Trust.urls')),
+# ] + debug_toolbar_urls()
 ]
-# ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

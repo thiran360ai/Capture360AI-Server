@@ -1,4 +1,4 @@
-import datetime, json, os, cv2
+import datetime,json,os,cv2
 from django.shortcuts import get_object_or_404, redirect, render
 from rest_framework.response import Response
 from rest_framework import status
@@ -25,10 +25,8 @@ def create_user(request):
         if serializer.is_valid():
             serializer.validated_data['password'] = make_password(serializer.validated_data['password'])
             user = CustomUser.objects.create(**serializer.validated_data)
-            return Response({'message': 'User created successfully', 'user': serializer.data},
-                            status=status.HTTP_201_CREATED)
+            return Response({'message': 'User created successfully', 'user': serializer.data}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 @api_view(['POST'])
 def login(request):
@@ -41,18 +39,15 @@ def login(request):
         return JsonResponse({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
 
     if check_password(password, user.password):
-        return JsonResponse({'Success': 'Login successfully', 'user_id': user.id, 'result': user.role},
-                            status=status.HTTP_200_OK)
-
+        return JsonResponse({'Success': 'Login successfully', 'user_id': user.id, 'result': user.role}, status=status.HTTP_200_OK)
+    
     return JsonResponse({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
-
 
 @api_view(['GET'])
 def total_users(request):
     users = CustomUser.objects.all()
     serializer = UserSerializer(users, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
-
 
 @api_view(['POST'])
 def create_post(request):
@@ -62,13 +57,11 @@ def create_post(request):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 @api_view(['GET'])
 def total_posts(request):
     posts = Post.objects.all()
     serializer = PostSerializer(posts, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
-
 
 @api_view(['POST'])
 def create_item_list(request):
@@ -77,7 +70,6 @@ def create_item_list(request):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 @api_view(['GET', 'POST'])
 def item_list(request):
@@ -90,7 +82,7 @@ def item_list(request):
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-
+    
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -101,26 +93,24 @@ def validate_and_save(serializer):
         return True, serializer.data
     return False, serializer.errors
 
-
 @api_view(['GET', 'POST'])
 def plan_list(request):
     if request.method == 'GET':
         plans = Plan.objects.all()
         serializer = PlanSerializer(plans, many=True)
         return Response(serializer.data)
-
-        # POST request
-        serializer = PlanSerializer(data=request.data)
-        success, data_or_errors = validate_and_save(serializer)
-
+    
+    # POST request
+    serializer = PlanSerializer(data=request.data)
+    success, data_or_errors = validate_and_save(serializer)
+    
     return Response(data_or_errors, status=status.HTTP_201_CREATED if success else status.HTTP_400_BAD_REQUEST)
-
 
 @api_view(['POST'])
 def video_upload(request):
     serializer = VideoUploadSerializer(data=request.data)
     success, data_or_errors = validate_and_save(serializer)
-
+    
     if success:
         total_video_uploads = VideoUpload.objects.count()
         response_data = {
@@ -128,11 +118,10 @@ def video_upload(request):
             'data': data_or_errors,
             'total_video_uploads': total_video_uploads
         }
-
+        
         return Response(response_data, status=status.HTTP_201_CREATED)
 
     return Response(data_or_errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 def upload_video(request):
     form = VideoUploadForm(request.POST or None, request.FILES or None)
@@ -141,10 +130,8 @@ def upload_video(request):
         return redirect('success_page')  # Redirect to a success page after upload
     return render(request, 'upload_video.html', {'form': form})
 
-
 def success_page(request):
     return render(request, 'success_page.html')
-
 
 @api_view(['POST'])
 def save_json(request, project_id):
@@ -164,25 +151,23 @@ def save_json(request, project_id):
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 @api_view(['GET'])
 def floor_plan_json(request):
     floor_plan = SaveJson.objects.all()
     serializer = JsonSerializer(floor_plan, many=True)
     return Response(serializer.data)
 
-
 @api_view(['GET'])
 def floor_plan_project_id(request, project_id):
     """Retrieve floor plan JSON data for a specific project ID."""
-
+    
     # Filter floor plans by the given project ID
     floor_plan = SaveJson.objects.filter(project_id=project_id)
 
     # If no data found, return a 404 response
     if not floor_plan.exists():
         return Response(
-            {'error': f'No floor plans found for project ID {project_id}.'},
+            {'error': f'No floor plans found for project ID {project_id}.'}, 
             status=status.HTTP_404_NOT_FOUND
         )
 
@@ -198,7 +183,7 @@ def get_floor_plan_id(request, floor_id):
     floor_plans = SaveJson.objects.filter(id=floor_id)
     if not floor_plans.exists():
         return Response(status=status.HTTP_404_NOT_FOUND)
-
+    
     serializer = JsonSerializer(floor_plans, many=True)
     return Response(serializer.data)
 
@@ -210,7 +195,6 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import VideoUpload
 
-
 def save_frame(image, output_directory, frame_count, video):
     try:
         # Save the frame as an image file
@@ -220,7 +204,6 @@ def save_frame(image, output_directory, frame_count, video):
     except Exception as e:
         print(f"Error saving frame: {e}")
         return None
-
 
 # @api_view(['GET'])
 # def video_processing(request):
@@ -235,7 +218,7 @@ def save_frame(image, output_directory, frame_count, video):
 #     try:
 #         video_path = video.file.path
 #         output_directory = f'media/video_images/{video_id}'
-
+        
 #         # Ensure the output directory exists
 #         os.makedirs(output_directory, exist_ok=True)
 
@@ -282,7 +265,7 @@ def save_frame(image, output_directory, frame_count, video):
 #         height, width, _ = image.shape
 #         new_width = int(height * 2)
 #         resized_image = cv2.resize(image, (new_width, height))
-
+        
 #         # Create image path and save the image
 #         image_path = os.path.join(output_directory, f'frame_{frame_count}.png')
 #         cv2.imwrite(image_path, resized_image)
@@ -305,11 +288,37 @@ def save_frame(image, output_directory, frame_count, video):
 # def get_video_frames(request, video_id):
 #     frames = VideoFrame.objects.filter(video_id=video_id).order_by('frame_number')
 #     frame_data = [{'frame_number': frame.frame_number, 'image_url': request.build_absolute_uri(frame.image.url)} for frame in frames]
-
+    
 #     if not frame_data:
 #         return JsonResponse({'error': 'Video frames not found'}, status=404)
-
+    
 #     return JsonResponse({'video_id': video_id, 'frames': frame_data}, status=200)
+import os
+import cv2
+import traceback
+from django.utils import timezone
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from .models import VideoUpload, VideoFrame
+from django.core.files import File
+from django.conf import settings
+import os
+import cv2
+from django.utils import timezone
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from .models import VideoUpload, VideoFrame
+from django.conf import settings
+import os
+import cv2
+from django.utils import timezone
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from .models import VideoUpload, VideoFrame
+
 
 import os
 import cv2
@@ -319,61 +328,6 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import VideoUpload, VideoFrame
 from PIL import Image
-
-
-# @api_view(['GET'])
-# def video_processing(request):
-#     video_id = request.query_params.get('video_id')
-#     if not video_id:
-#         return Response({'error': 'Video ID is required'}, status=status.HTTP_400_BAD_REQUEST)
-
-#     try:
-#         video = VideoUpload.objects.get(id=video_id)
-#     except VideoUpload.DoesNotExist:
-#         return Response({'error': 'Video not found'}, status=status.HTTP_404_NOT_FOUND)
-
-#     try:
-#         video_path = video.file.path
-#         output_directory = f'media/video_images/{video_id}'
-#         os.makedirs(output_directory, exist_ok=True)
-
-#         cap = cv2.VideoCapture(video_path)
-#         if not cap.isOpened():
-#             return Response({'error': 'Error opening video file'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-#         fps = cap.get(cv2.CAP_PROP_FPS)
-#         frame_count = 0
-#         success, image = cap.read()
-
-#         while success:
-#             if frame_count % int(fps) == 0:
-#                 image_path = os.path.join(output_directory, f'frame_{frame_count}.png')
-
-#                 # Resize image to 2:1 aspect ratio (adjust dimensions as needed)
-#                 height, width, _ = image.shape
-#                 new_width = int(height * 2)
-#                 resized_image = cv2.resize(image, (new_width, height))
-
-#                 # Save resized image as PNG
-#                 cv2.imwrite(image_path, resized_image)
-
-#                 VideoFrame.objects.create(
-#                     video=video,
-#                     frame_number=frame_count,
-#                     image=image_path,
-#                     timestamp=timezone.now(),
-#                     plan=video.plan,
-#                     json=json
-#                 )
-
-#             success, image = cap.read()
-#             frame_count += 1
-
-#         cap.release()
-
-#         return Response({'message': 'Video processed successfully'}, status=status.HTTP_200_OK)
-#     except Exception as e:
-#         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
 def video_processing(request):
@@ -439,33 +393,180 @@ def video_processing(request):
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-
 from django.http import JsonResponse
 from .models import VideoFrame
-
 
 def get_video_frames(request, video_id):
     try:
         frames = VideoFrame.objects.filter(video_id=video_id).order_by('frame_number')
-        frame_data = [{'frame_number': frame.frame_number, 'image_url': request.build_absolute_uri(frame.image.url)} for
-                      frame in frames]
+        frame_data = [{'frame_number': frame.frame_number, 'image_url': request.build_absolute_uri(frame.image.url)} for frame in frames]
         return JsonResponse({'video_id': video_id, 'frames': frame_data}, status=200)
     except VideoFrame.DoesNotExist:
         return JsonResponse({'error': 'Video frames not found'}, status=404)
 
 
+
+# from rest_framework.decorators import api_view
+# from rest_framework.response import Response
+# from rest_framework import status
+# from .models import VideoFrame
+# from django.utils.dateparse import parse_date
+
+# @api_view(['GET'])
+# def get_frames_by_date(request):
+#     video_id = request.query_params.get('video_id')
+#     date_str = request.query_params.get('date')
+
+#     if not video_id or not date_str:
+#         return Response({'error': 'Video ID and date are required'}, status=status.HTTP_400_BAD_REQUEST)
+    
+#     date = parse_date(date_str)
+#     if not date:
+#         return Response({'error': 'Invalid date format'}, status=status.HTTP_400_BAD_REQUEST)
+    
+#     frames = VideoFrame.objects.filter(video_id=video_id, timestamp__date=date)
+#     frame_data = [{'frame_number': frame.frame_number, 'image': frame.image.url} for frame in frames]
+    
+#     return Response({'frames': frame_data}, status=status.HTTP_200_OK)
+
+
+# from django.shortcuts import render
+# from .models import VideoUpload, VideoFrame
+# from django.core.mail import send_mail
+# from django.shortcuts import render
+# from .models import VideoUpload, VideoFrame
+
+# def video_images(request):
+#     video_id = request.GET.get('video_id')
+#     if video_id:
+#         try:
+#             video = VideoUpload.objects.get(id=video_id)
+#             frames = VideoFrame.objects.filter(video=video)
+#             frame_data = [{'url': frame.image.url, 'timestamp': frame.timestamp} for frame in frames]
+#             print(frame_data)  # Debugging line
+            
+#             # URL for the video_images view
+#             url = request.build_absolute_uri()
+
+#             # Define email subject and message
+#             subject = 'Video Images Notification'
+#             message = 'The video images are ready for viewing. Click the link below to access them:'
+            
+#             # Send email with URL to recipient
+#             recipient_list = ['recipient@example.com']  # Update with recipient's email
+#             send_email_with_url(subject, message, recipient_list, url)
+
+#             return render(request, 'video_images.html', {'frames': frame_data})
+#         except VideoUpload.DoesNotExist:
+#             return render(request, 'video_images.html', {'error': 'Video not found'})
+#     else:
+#         return render(request, 'video_images.html', {'error': 'Video ID is required'})
+from django.shortcuts import render
+from django.core.mail import send_mail
+from .models import VideoUpload, VideoFrame
+from django.utils import timezone
+from django.shortcuts import render
+from django.core.mail import send_mail
+from .models import VideoUpload, VideoFrame
+
+from django.shortcuts import render
+from django.core.mail import send_mail
+from .models import VideoUpload, VideoFrame
+
+from django.shortcuts import render
+from django.core.mail import send_mail
+from .models import VideoUpload, VideoFrame
+
+# def video_images(request):
+#     video_id = request.GET.get('video_id')
+#     if video_id:
+#         try:
+#             video = VideoUpload.objects.get(id=video_id)
+#             frames = VideoFrame.objects.filter(video=video)
+#             frame_data = [{'url': frame.image.url, 'timestamp': frame.timestamp} for frame in frames]
+            
+#             # Collect all upload_date values
+#             all_upload_dates = list(VideoUpload.objects.values_list('upload_date', flat=True))
+            
+#             # Print upload_date for debugging
+#             print("All Upload Dates:", all_upload_dates)
+            
+#             # URL for the video_images view
+#             url = request.build_absolute_uri()
+            
+#             # Define email subject and message
+#             subject = 'Video Images Notification'
+#             message = f'The video images are ready for viewing. Click the link below to access them:\n{url}'
+
+#             # Send email with URL to recipient
+#             recipient_list = ['']  # Update with recipient's email
+#             send_mail(subject, message, from_email='manikvasu778899@gmail.com', recipient_list=recipient_list, html_message=None)
+
+#             return render(request, 'manik.html', {'frames': frame_data, 'all_upload_dates': all_upload_dates})
+#         except VideoUpload.DoesNotExist:
+#             return render(request, 'manik.html', {'error': 'Video not found'})
+#     else:
+#         return render(request, 'manik.html', {'error': 'Video ID is required'})
+
+from django.shortcuts import render
+from django.core.mail import send_mail
+from .models import VideoUpload, VideoFrame
+
+from django.shortcuts import render
+from django.core.mail import send_mail
+from django.http import JsonResponse
+from .models import VideoUpload, VideoFrame
+
+from django.shortcuts import render
+from django.core.mail import send_mail
+from django.http import JsonResponse
+from .models import VideoUpload, VideoFrame
+from datetime import datetime
+
 def video_images(request):
     upload_date = request.GET.get('upload_date')
-    video_id = request.GET.get('video_id')
-
+    print(f"Received upload_date: {upload_date}")
     if upload_date:
-        return handle_upload_date(upload_date, request)
-
+        try:
+            # Parse upload_date to match the format in your database
+            # parsed_date = datetime.strptime(upload_date, '%B %d, %Y, %I:%M %p')
+            parsed_date = VideoUpload.objects.get(id=video_id)
+            print(parsed_date)
+            video = VideoUpload.objects.filter(upload_date=parsed_date).first()
+            if video:
+                frames = VideoFrame.objects.filter(video=video)
+                frame_data = [{'url': frame.image.url, 'timestamp': frame.video_id} for frame in frames]
+                return JsonResponse({'frames': frame_data})
+            else:
+                return JsonResponse({'error': 'No videos found for the selected date'}, status=404)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    video_id = request.GET.get('video_id')
     if video_id:
-        return handle_video_id(video_id, request)
+        try:
+            video = VideoUpload.objects.get(id=video_id)
+            frames = VideoFrame.objects.filter(video=video)
+            frame_data = [{'url': frame.image.url, 'timestamp': frame.video_id} for frame in frames]
 
-    return render(request, 'manik.html', {'error': 'Video ID is required'})
+            all_upload_dates = list(VideoUpload.objects.values_list('id', flat=True))
 
+            # URL for the video_images view
+            url = request.build_absolute_uri()
+
+            # Define email subject and message
+            subject = 'Video Images Notification'
+            message = f'The video images are ready for viewing. Click the link below to access them:\n{url}'
+
+            # Send email with URL to recipient
+            recipient_list = ['']  # Update with recipient's email
+            send_mail(subject, message, from_email='manikvasu778899@gmail.com', recipient_list=recipient_list, html_message=None)
+
+            return render(request, 'manik.html', {'frames': frame_data, 'all_upload_dates': all_upload_dates})
+        except VideoUpload.DoesNotExist:
+            return render(request, 'manik.html', {'error': 'Video not found'})
+    else:
+        return render(request, 'manik.html', {'error': 'Video ID is required'})
 
 def handle_upload_date(upload_date, request):
     try:
@@ -480,14 +581,12 @@ def handle_upload_date(upload_date, request):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
-
 def handle_video_id(video_id, request):
     try:
         video = VideoUpload.objects.get(id=video_id)
         return get_frames_response(video, request)
     except VideoUpload.DoesNotExist:
         return render(request, 'manik.html', {'error': 'Video not found'})
-
 
 def get_frames_response(video, request):
     frames = VideoFrame.objects.filter(video=video)
@@ -498,7 +597,6 @@ def get_frames_response(video, request):
 
     all_upload_dates = list(VideoUpload.objects.values_list('id', flat=True))
     return render(request, 'manik.html', {'frames': frame_data, 'all_upload_dates': all_upload_dates})
-
 
 def send_video_images_email(request):
     subject = 'Video Images Notification'
@@ -513,7 +611,6 @@ def send_video_images_email(request):
         html_message=None
     )
 
-
 @api_view(['POST'])
 def send_email_notification(request):
     email = request.data.get('email')
@@ -525,18 +622,16 @@ def send_email_notification(request):
         sender_email = 'manikvasu2000@gmail.com'  # Update with your email
         send_mail(subject, message, sender_email, [email])
         return Response({'success': True})
-
+    
     return Response({'success': False, 'error': 'Missing email or image URL'}, status=400)
-
 
 @api_view(['GET'])
 def get_floor_plan(request, plan_id):
     plan = get_object_or_404(Plan, id=plan_id)
     if plan.image:
         return Response({'floor_plan': plan.image.url}, status=status.HTTP_200_OK)
-
+    
     return Response({'error': 'Floor plan not found'}, status=status.HTTP_404_NOT_FOUND)
-
 
 @api_view(['POST'])
 def upload_floor_plan(request):
@@ -552,11 +647,9 @@ def upload_floor_plan(request):
             floor_or_name=floor_or_name,
             image=image
         )
-        return Response({'message': 'Floor plan uploaded successfully', 'plan_id': plan.id},
-                        status=status.HTTP_201_CREATED)
-
+        return Response({'message': 'Floor plan uploaded successfully', 'plan_id': plan.id}, status=status.HTTP_201_CREATED)
+    
     return Response({'error': 'Missing data'}, status=status.HTTP_400_BAD_REQUEST)
-
 
 @api_view(['POST'])
 def add_location(request):
@@ -568,9 +661,8 @@ def add_location(request):
         plan = get_object_or_404(Plan, id=plan_id)
         Location.objects.create(plan=plan, latitude=latitude, longitude=longitude)
         return Response({'message': 'Location added successfully'}, status=status.HTTP_201_CREATED)
-
+    
     return Response({'error': 'Missing data'}, status=status.HTTP_400_BAD_REQUEST)
-
 
 @api_view(['POST'])
 def calculate_distance_and_steps(request):
@@ -584,8 +676,7 @@ def calculate_distance_and_steps(request):
         if not isinstance(sensor_data_list, list):
             return JsonResponse({'error': 'sensor_data should be a list of dictionaries.'}, status=400)
 
-        results, total_distance, total_steps, total_seconds, all_step_distances, all_peak_times = process_sensor_data(
-            sensor_data_list)
+        results, total_distance, total_steps, total_seconds, all_step_distances, all_peak_times = process_sensor_data(sensor_data_list)
 
         return JsonResponse({
             'results': results,
@@ -600,7 +691,6 @@ def calculate_distance_and_steps(request):
         return JsonResponse({'error': 'Invalid JSON data'}, status=400)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
-
 
 def process_sensor_data(sensor_data_list):
     total_distance = 0.0
@@ -617,7 +707,7 @@ def process_sensor_data(sensor_data_list):
             continue
 
         distance, steps, step_distances, peak_times = calculate_distance_and_steps_from_sensor_data(sensor_data)
-
+        
         total_distance += float(distance)
         total_steps += int(steps)
         total_seconds += float(sensor_data['time'][-1]) - float(sensor_data['time'][0])
@@ -635,6 +725,9 @@ def process_sensor_data(sensor_data_list):
     return results, total_distance, total_steps, total_seconds, all_step_distances, all_peak_times
 
 
+
+
+
 # Email sending utility function
 def send_email_with_url(subject, message, recipient_list, url):
     try:
@@ -645,17 +738,14 @@ def send_email_with_url(subject, message, recipient_list, url):
         print(f"Email sending error: {e}")
         return False
 
-
 # View for location tracker
 def location_tracker_view(request):
     return render(request, 'location_tracker.html')
-
 
 # View for plan images
 def plan_image_view(request):
     plans = Plan.objects.all()
     return render(request, 'plan_images.html', {'plans': plans})
-
 
 # View for editing plans
 @api_view(['GET', 'POST'])
@@ -671,7 +761,6 @@ def plan_edit_view(request, plan_id):
         form = PlanForm(instance=plan)
     return render(request, 'plan_edit.html', {'plan': plan, 'form': form})
 
-
 def update_markers(plan, post_data):
     Marker.objects.filter(plan=plan).delete()  # Clear existing markers
     markers_x = post_data.getlist('markers_x')
@@ -680,7 +769,6 @@ def update_markers(plan, post_data):
 
     for x, y, distance in zip(markers_x, markers_y, markers_distance):
         Marker.objects.create(plan=plan, x=int(x), y=int(y), distance=float(distance) if distance else None)
-
 
 # View to get video frames
 @api_view(['GET'])
@@ -699,7 +787,6 @@ def get_video_frames(request, video_id):
     }
     return Response(response_data, status=status.HTTP_200_OK)
 
-
 # View to get markers
 @api_view(['GET'])
 def get_markers(request):
@@ -707,16 +794,14 @@ def get_markers(request):
     serializer = MarkerSerializer(markers, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
-
 # View to get all video details
 @api_view(['GET'])
 def get_all_details(request):
     video_id = request.query_params.get('id')
     if video_id:
         return get_video_details(video_id)
-
+    
     return get_all_video_details()
-
 
 def get_video_details(video_id):
     video = get_object_or_404(VideoUpload, id=video_id)
@@ -737,7 +822,6 @@ def get_video_details(video_id):
     }
 
     return Response(video_details, status=status.HTTP_200_OK)
-
 
 def get_all_video_details():
     video_uploads = VideoUpload.objects.all()

@@ -42,7 +42,7 @@ def users(request):
         return Response(serializer.data)
 
 
-@api_view(['POST', 'GET'])
+@api_view(['POST'])
 def create_Employee(request):
     """
     API endpoint to create a new employee.
@@ -71,12 +71,7 @@ def create_Employee(request):
                              'success': serializer.data['success']}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    elif request.method == 'GET':
-        # Return a response for GET request if needed
-        # Example: Return a list of employees (or whatever data makes sense for your app)
-        employees = Employee.objects.all()
-        serializer = EmployeeSerializer(employees, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    
 
     # In case a request method other than POST or GET is sent, you could return a method not allowed response.
     return Response({'message': 'Method Not Allowed'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
@@ -206,49 +201,50 @@ import traceback
 # from .models import Employee  # Replace with your actual model import
 
 
-# @api_view(['POST'])
-# def Emp_login(request):
-#     """
-#     API endpoint for employee login.
+@api_view(['POST'])
+def Emp_login(request):
+    """
+    API endpoint for employee login.
 
-#     Accepts the following parameters in the request body:
-#     - email: The email of the employee attempting to login.
-#     - password: The password of the employee.
+    Accepts the following parameters in the request body:
+    - email: The email of the employee attempting to login.
+    - password: The password of the employee.
 
-#     Returns a JSON response containing a message and employee details if the login is successful.
-#     Returns a JSON object with an error message if the login fails.
+    Returns a JSON response containing a message and employee details if the login is successful.
+    Returns a JSON object with an error message if the login fails.
 
-#     Returns:
-#     - 200 OK: A JSON object with a success message, employee ID, username, and role if credentials are valid.
-#     - 400 Bad Request: A JSON object with an error message if credentials are invalid.
-#     - 500 Internal Server Error: A JSON object with an error message if an unexpected error occurs.
-#     """
+    Returns:
+    - 200 OK: A JSON object with a success message, employee ID, username, and role if credentials are valid.
+    - 400 Bad Request: A JSON object with an error message if credentials are invalid.
+    - 500 Internal Server Error: A JSON object with an error message if an unexpected error occurs.
+    """
 
-#     try:
-#         email = request.data.get('email')
-#         password = request.data.get('password')
+    try:
+        email = request.data.get('email')
+        password = request.data.get('password')
 
-#         try:
-#             user = Employee.objects.get(email=email)
-#         except Employee.DoesNotExist:
-#             return JsonResponse({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            user = Employee.objects.get(email=email)
+        except Employee.DoesNotExist:
+            return JsonResponse({'error': 'Invalid credentials'}, status=status.HTTP_400_BAD_REQUEST)
 
-#         if check_password(password, user.password):
-#             # Change success to True if password is matched
-#             return JsonResponse({
-#                 'Message': 'Login successfully',
-#                 'success': True,  # Set success to True
-#                 'user_id': user.id,
-#                 'username': user.username,
-#                 'role': user.role
-#             }, status=status.HTTP_200_OK)
-#         else:
-#             return JsonResponse({'error': 'Invalid credentials', 'success': False}, status=status.HTTP_400_BAD_REQUEST)
+        if check_password(password, user.password):
+            # Change success to True if password is matched
+            return JsonResponse({
+                'Message': 'Login successfully',
+                'success': True,  # Set success to True
+                'user_id': user.id,
+                'username': user.username,
+                'role': user.role
+            }, status=status.HTTP_200_OK)
+        else:
+            return JsonResponse({'error': 'Invalid credentials', 'success': False}, status=status.HTTP_400_BAD_REQUEST)
 
-#     except Exception as e:
-#         # Print the full traceback to debug the issue
-#         traceback.print_exc()
-#         return JsonResponse({'error': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    except Exception as e:
+        # Print the full traceback to debug the issue
+        traceback.print_exc()
+        return JsonResponse({'error': 'Internal server error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
 import traceback
 from django.contrib.auth.hashers import check_password
 from django.utils.timezone import now
@@ -348,10 +344,10 @@ def post_saloon_orders(request):
     """
     if request.method == 'POST':
         serializer = SaloonOrdersSerializer(data=request.data)
-
+        print(serializer)
         if serializer.is_valid():
             serializer.save()  # Save the validated data
-
+            print('saved')
             return Response({'message': 'Order success', 'order': serializer.data}, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -1291,8 +1287,73 @@ def update_task(request):
     # If the serializer is invalid, return errors
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-<<<<<<< HEAD
+
+@api_view(['GET'])
+def orders_by_user_id(request):
+    try:
+        user_param = request.query_params.get('user_id')
+        status_param = request.query_params.get('status')
+
+        if not user_param or not status_param:
+            return Response({'error': 'Both user_id and status parameters are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Fetch data from different models
+        hotel_orders = HotelOrder.objects.filter(customer_id=user_param, status=status_param)
+        gym_orders = GymOrder.objects.filter(customer_id=user_param, status=status_param)
+        spa_orders = SpaOrder.objects.filter(customer_id=user_param, status=status_param)
+        saloon_orders = SaloonOrder.objects.filter(customer_id=user_param, status=status_param)
+
+        # Serialize the data
+        hotel_data = HotelOrdersSerializer(hotel_orders, many=True).data
+        gym_data = GymOrderSerializer(gym_orders, many=True).data
+        spa_data = SpaOrdersSerializer(spa_orders, many=True).data
+        saloon_data = SaloonOrdersSerializer(saloon_orders, many=True).data
+
+        # Return response
+        return Response({
+            "hotel_orders": hotel_data,
+            "gym_orders": gym_data,
+            "spa_orders": spa_data,
+            "saloon_orders": saloon_data
+        }, status=status.HTTP_200_OK)
+
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-=======
->>>>>>> 1030f751e021cf9d19c69bf13cfbfc5dda3eb672
+@api_view(['POST'])
+def submit_review(request):
+    serializer = ReviewSerializer(data=request.data)
+    
+    if serializer.is_valid():
+        serializer.save()
+        return Response({"message": "Review submitted successfully!", "data": serializer.data}, status=status.HTTP_201_CREATED)
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+@api_view(['DELETE'])
+def delete_booking(request):
+    booking_id =request.query_params.get('booking_id')
+    user_id =request.query_params.get('user_id')
+    role = request.query_params.get('role')
+    if not booking_id or not user_id:
+        return Response({'error': 'Both booking_id and user_id are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        if role == "hotel":
+            booking = HotelOrder.objects.get(id=booking_id, customer_id=user_id)
+        elif role == "spa":
+            booking = SpaOrder.objects.get(id=booking_id, customer_id=user_id)
+        elif role == "gym":
+            booking = GymOrder.objects.get(id=booking_id, customer_id=user_id)
+        elif role == "saloon":
+            booking = SaloonOrder.objects.get(id=booking_id, customer_id=user_id)
+        else:
+            return Response({'error': 'Invalid role specified'}, status=status.HTTP_400_BAD_REQUEST)
+
+        booking.delete()
+        return Response({'message': 'Booking deleted successfully.'}, status=status.HTTP_200_OK)
+    except (HotelOrder.DoesNotExist, SpaOrder.DoesNotExist, GymOrder.DoesNotExist, SaloonOrder.DoesNotExist):
+        return Response({'error': 'Booking not found.'}, status=status.HTTP_404_NOT_FOUND)

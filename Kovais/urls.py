@@ -8,11 +8,15 @@ urlpatterns = [
     path('create-customer/', create_user_details),
     path('customer-login/', customer_login),
     path('total-users/', AsyncUserList.as_view()),
+    path('orders/',orders_by_user_id),
+    path('post-review/', submit_review),
+    path('delete-booking/', delete_booking),
 
     # employees
     
     # path('Employee-login/', Emp_login, name='employee_login'),
     path('create-employee/', create_Employee, name='create_employee'),
+    path('employee-login/', Emp_login, name='employee_login'),
     path('total-employees/', total_employees, name='total_employees'),
     path('update-employee/', update_employee, name='update_employee'),
     path('delete-employee/', delete_employee, name='delete_employee'),

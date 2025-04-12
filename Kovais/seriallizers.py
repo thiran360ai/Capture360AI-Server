@@ -13,7 +13,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
         model = Employee
         # fields = ['id', 'username', 'password', 'mobile', 'email', 'role', 'success', 'location', 'first_name',
                 #   'last_name', 'success']
-        fields = '_all_'
+        fields = '__all__'
 
 class TotalEmployeeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -86,3 +86,12 @@ class TaskSerializer(serializers.ModelSerializer):
     class Meta:
         model = Task
         fields = ['id', 'description', 'status', 'employee']
+
+
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Review
+        fields = ['id', 'customer_id', 'order_id', 'rating', 'comment', 'created_at']
+        read_only_fields = ['id', 'created_at']

@@ -116,7 +116,7 @@ INSTALLED_APPS = [
     'Kovais',
     'import_export',
     'corsheaders',
-
+    'ecomapp',
     'app',
     'bike',
     'Attendance',

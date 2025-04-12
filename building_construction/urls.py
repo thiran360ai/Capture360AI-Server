@@ -30,10 +30,8 @@ urlpatterns = [
     path('gateway/',include('gateway.urls')),
     path('bike/',include('bike.urls')),
     path('property/',include('app.urls')),
-    
+    path('ecomapp/',include('ecomapp.urls')),
 
-#     path('Trust/',include('Trust.urls')),
-# ] + debug_toolbar_urls()
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

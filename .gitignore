@@ -173,3 +173,4 @@ app/migrations/
 officeapp/migrations/
 gateway/migrations/
 bike/migrations/
+ecomapp/migrations/

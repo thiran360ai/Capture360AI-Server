@@ -8,62 +8,42 @@ from ecomapp.models import *
 from ecomapp.serializers import *
 
 
-User = get_user_model()
+# User = get_user_model()
 
 @api_view(['GET', 'POST'])
 @permission_classes([AllowAny])  # Allow public access
 def register_user(request):
     if request.method == 'GET':
         role = request.query_params.get('role', 'customer')
-        users = User.objects.filter(role=role).values(
-            'id', 'email', 'username', 'phone_number', 'latitude', 'longitude', 'user_address'
+        users = Customer.objects.filter(role=role).values(
+            'id', 'email', 'username', 'mobile_number', 'latitude', 'longitude', 'user_address'
         )
         return Response(users, status=status.HTTP_200_OK)
-
-    # elif request.method == 'POST':
-    #     data = request.data
-    #     if not isinstance(data, dict):
-    #         return Response({"error": "Invalid data format, expected a dictionary"}, status=status.HTTP_400_BAD_REQUEST)
-        
-    #     role = data.get('role', 'customer')  # Default role
-    #     user = User(
-    #         email=data['email'],
-    #         username=data['username'],
-    #         phone_number=data['phone_number'],
-    #         role=role,
-    #         latitude=data.get('latitude', None),
-    #         longitude=data.get('longitude', None),
-    #         user_address=data.get('user_address', "")
-    #     )
-    #     user.set_password(data['password'])  # Hash password
-    #     user.save()
-        
-    #     return Response({"email": uselif request.method == 'POST':
 
     elif request.method == 'POST':
         data = request.data
         if not isinstance(data, dict):
             return Response({"error": "Invalid data format, expected a dictionary"}, status=status.HTTP_400_BAD_REQUEST)
 
-        phone_number = data.get('phone_number')
+        mobile_number = data.get('mobile_number')
         password = data.get('password')
         role = data.get('role', 'customer')
 
-        if not phone_number or not password:
+        if not mobile_number or not password:
             return Response({"error": "Phone number and password are required."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Check if phone number already exists
-        if User.objects.filter(phone_number=phone_number).exists():
+        if Customer.objects.filter(mobile_number=mobile_number).exists():
             return Response({"message": "Phone number already registered. Please log in."}, status=status.HTTP_409_CONFLICT)
 
         # Auto-generate username and email if not provided
-        generated_username = f"user_{phone_number}"
-        generated_email = f"{phone_number}@example.com"
+        generated_username = f"user_{mobile_number}"
+        generated_email = f"{mobile_number}@example.com"
 
-        user = User(
+        user = Customer(
             username=generated_username,
             email=generated_email,
-            phone_number=phone_number,
+            mobile_number=mobile_number,
             role=role,
             latitude=data.get('latitude'),
             longitude=data.get('longitude'),
@@ -74,32 +54,11 @@ def register_user(request):
 
         return Response({
             "message": f"{role.capitalize()} registered successfully",
-            "phone_number": user.phone_number,
+            "mobile_number": user.mobile_number,
             "user_id": user.id
         }, status=status.HTTP_201_CREATED)
 
 
-# @api_view(['POST'])
-# @permission_classes([AllowAny])
-# def login_user(request):
-#     username = request.data.get('username')  # <-- change from email
-#     password = request.data.get('password')
-
-#     user = authenticate(request, username=username, password=password)
-
-#     if user is not None:
-#         refresh = RefreshToken.for_user(user)
-#         return Response({
-#             'refresh': str(refresh),
-#             'access': str(refresh.access_token),
-#             'user': {
-#                 'id': user.id,
-#                 'username': user.username,
-#                 'email': user.email,
-#                 'role': user.role
-#             }
-#         }, status=status.HTTP_200_OK)
-#     return Response({'error': 'Invalid Credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login_user(request):
@@ -208,24 +167,6 @@ def manage_banners(request):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-# # ✅ Manage Categories
-# @api_view(['GET', 'POST'])
-# @permission_classes([IsAuthenticated])
-# def manage_categories(request):
-#     if request.method == 'GET':
-#         categories = Category.objects.all()
-#         serializer = CategorySerializer(categories, many=True)
-#         return Response(serializer.data, status=status.HTTP_200_OK)
-
-#     elif request.method == 'POST':
-#         if not hasattr(request.user, 'role') or request.user.role.lower() != 'shopkeeper':
-#             return Response({'error': 'Only shopkeepers can create categories'}, status=status.HTTP_403_FORBIDDEN)
-
-#         serializer = CategorySerializer(data=request.data)
-#         if serializer.is_valid():
-#             serializer.save()
-#             return Response(serializer.data, status=status.HTTP_201_CREATED)
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET', 'POST'])
 @permission_classes([AllowAny])  # No authentication required
@@ -247,26 +188,6 @@ def manage_categories(request):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-# # ✅ Manage Subcategories
-# @api_view(['GET', 'POST'])
-# @permission_classes([IsAuthenticated])
-# def manage_subcategories(request):
-#     if request.method == 'GET':
-#         category_id = request.query_params.get('category_id')
-#         subcategories = Subcategory.objects.filter(category_id=category_id) if category_id else Subcategory.objects.all()
-#         serializer = SubcategorySerializer(subcategories, many=True)
-#         return Response(serializer.data, status=status.HTTP_200_OK)
-
-#     elif request.method == 'POST':
-#         if not hasattr(request.user, 'role') or request.user.role != 'shopkeeper':
-#             return Response({'error': 'Only shopkeepers can create subcategories'}, status=status.HTTP_403_FORBIDDEN)
-
-#         serializer = SubcategorySerializer(data=request.data)
-#         if serializer.is_valid():
-#             serializer.save()
-#             return Response(serializer.data, status=status.HTTP_201_CREATED)
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET', 'POST'])
 @permission_classes([AllowAny])  # 🔓 Anyone can access
@@ -528,70 +449,7 @@ def product_variation_list_create(request, product_id):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
 
-# from rest_framework.response import Response
-# from rest_framework.decorators import api_view
-# from rest_framework import status
-# from geopy.distance import geodesic
-# from .models import ProductVariation
-
-# @api_view(['GET'])
-# @permission_classes([AllowAny])  
-# def search_product(request):
-#     product_name = request.query_params.get('query')
-#     user_lat = request.query_params.get('lat')
-#     user_lon = request.query_params.get('lon')
-
-#     # Check if all parameters are provided
-#     if not product_name or not user_lat or not user_lon:
-#         return Response({"error": "Missing query, lat, or lon parameters"}, status=status.HTTP_400_BAD_REQUEST)
-
-#     try:
-#         user_location = (float(user_lat), float(user_lon))
-#     except ValueError:
-#         return Response({"error": "Invalid latitude or longitude"}, status=status.HTTP_400_BAD_REQUEST)
-
-#     # Fetch all product variations matching the query
-#     product_variations = ProductVariation.objects.filter(product__name__icontains=product_name).select_related('product', 'product__shop')
-
-#     if not product_variations.exists():
-#         return Response({"error": "No product variations found matching the query"}, status=status.HTTP_404_NOT_FOUND)
-
-#     results = []
-
-#     for variation in product_variations:
-#         shop = variation.product.shop  # Get the shop selling this product
-
-#     # Ensure the shop has valid location data
-#         if not shop.latitude or not shop.longitude:
-#             continue
-
-#     # Calculate distance between user and shop
-#     shop_location = (float(shop.latitude), float(shop.longitude))
-#     distance_km = geodesic(user_location, shop_location).km  # Calculate distance in KM
-#     delivery_time = round(distance_km * 3)  # Assume 3 minutes per KM for delivery time
-
-#     # Use the correct attribute for shop name (assuming it's shop_name in Profile)
-#     shop_name = shop.profile.shop_name if hasattr(shop, 'profile') else "Unknown Shop"  # Adjust accordingly
-
-#     # Append results for product variation
-#     results.append({
-#         "product_name": variation.product.name,  # Correctly accessing the product name
-#         "variation_name": variation.name if hasattr(variation, 'name') else "No variation name",  # Check if variation has name
-#         "price": variation.price,
-#         "offer_price": variation.offer_price,
-#         "shop_name": shop_name,  # Use the correct shop name field
-#         "shop_location": {"latitude": shop.latitude, "longitude": shop.longitude},
-#         "distance_km": round(distance_km, 2),
-#         "delivery_time": f"{delivery_time} min",
-#     })
-
-
-#     # Sort results by distance (ascending order)
-#     sorted_results = sorted(results, key=lambda x: x['distance_km'])
-
-#     return Response(sorted_results, status=status.HTTP_200_OK)
 from django.shortcuts import render
 from django.http import JsonResponse
 from geopy.distance import geodesic  # To calculate distance between two locations
@@ -636,6 +494,7 @@ def search_product(request):
         })
 
     return JsonResponse(results, safe=False)
+
 
 
 # ✅ Get or Create Cart for Logged-in User
@@ -768,79 +627,60 @@ def order_from_cart(request):
     return Response({"message": "Order placed from cart successfully", "order_id": order.id}, status=status.HTTP_201_CREATED)
 
 
-# # 📌 DIRECT ORDER (WITHOUT ADDING TO CART)
-# @api_view(['POST'])
-# @permission_classes([IsAuthenticated])
-# def place_order_direct(request):
-#     user = request.user
-#     order_items = request.data.get('items', [])
-
-#     if not order_items:
-#         return Response({"error": "No items provided"}, status=status.HTTP_400_BAD_REQUEST)
-
-#     total_price = 0
-#     order = Order.objects.create(user=user, total_price=0, status='pending')
-
-#     for item in order_items:
-#         try:
-#             product_variation = ProductVariation.objects.get(id=item['product_variation'])
-#             quantity = int(item['quantity'])
-#             price = product_variation.price * quantity
-
-#             OrderItem.objects.create(
-#                 order=order,
-#                 product_variation=product_variation,
-#                 quantity=quantity,
-#                 price=price
-#             )
-#             total_price += price
-#         except ProductVariation.DoesNotExist:
-#             return Response({"error": f"Invalid product variation ID: {item['product_variation']}"}, status=status.HTTP_400_BAD_REQUEST)
-
-#     order.total_price = total_price
-#     order.save()
 from django.db import transaction
-
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def place_order_direct(request):
     user = request.user
+
     order_items = request.data.get('items', [])
+    address = request.data.get('address')         # 🔥 extra
+    pincode = request.data.get('pincode')         # 🔥 extra
+    latitude = request.data.get('latitude')       # 🔥 extra
+    longitude = request.data.get('longitude')     # 🔥 extra
 
     if not order_items:
         return Response({"error": "No items provided"}, status=status.HTTP_400_BAD_REQUEST)
 
-    try:
-        with transaction.atomic():
-            total_price = 0
-            order = Order.objects.create(user=user, total_price=0, status='pending')
+    # 💡 You can print, log or process these here
+    print("Received Address:", address)
+    print("Pincode:", pincode)
+    print("Lat/Long:", latitude, longitude)
 
-            for item in order_items:
-                product_variation = ProductVariation.objects.get(id=item['product_variation'])
-                quantity = int(item['quantity'])
-                price = product_variation.price * quantity
+    total_price = 0
+    order = Order.objects.create(user=user, total_price=0, status='pending')  # no model change
 
-                OrderItem.objects.create(
-                    order=order,
-                    product_variation=product_variation,
-                    quantity=quantity,
-                    price=price
-                )
-                total_price += price
+    for item in order_items:
+        try:
+            product_variation = ProductVariation.objects.get(id=item['product_variation'])
+            quantity = int(item['quantity'])
+            price = product_variation.price * quantity
 
-            order.total_price = total_price
-            order.save()
+            OrderItem.objects.create(
+                order=order,
+                product_variation=product_variation,
+                quantity=quantity,
+                price=price
+            )
+            total_price += price
+        except ProductVariation.DoesNotExist:
+            return Response(
+                {"error": f"Invalid product variation ID: {item['product_variation']}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-            return Response({
-                "message": "Order placed successfully",
-                "order_id": order.id,
-                "total_price": str(order.total_price),
-                "status": order.status
-            }, status=status.HTTP_201_CREATED)
+    order.total_price = total_price
+    order.save()
 
-    except ProductVariation.DoesNotExist:
-        return Response({"error": "Invalid product variation ID"}, status=status.HTTP_400_BAD_REQUEST)
-
+    return Response({
+        "message": "Order placed successfully (address received but not saved)",
+        "order_id": order.id,
+        "total_price": str(order.total_price),
+        "address": address,
+        "pincode": pincode,
+        "latitude": latitude,
+        "longitude": longitude
+    }, status=status.HTTP_201_CREATED)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

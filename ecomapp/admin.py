@@ -25,12 +25,12 @@ from .models import Customer
 
 class CustomerAdmin(UserAdmin):
     model = Customer
-    list_display = ('username', 'email', 'role', 'phone_number', 'is_active', 'is_staff')
+    list_display = ('username', 'email', 'role', 'mobile_number', 'is_active', 'is_staff')
     list_filter = ('role', 'is_active', 'is_staff')
 
     fieldsets = (
         (None, {'fields': ('username', 'password')}),
-        ('Personal Info', {'fields': ('email', 'phone_number', 'role', 'latitude', 'longitude', 'user_address')}),
+        ('Personal Info', {'fields': ('email', 'mobile_number', 'role', 'latitude', 'longitude', 'user_address')}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
     )
@@ -42,7 +42,7 @@ class CustomerAdmin(UserAdmin):
         }),
     )
 
-    search_fields = ('username', 'email', 'phone_number')
+    search_fields = ('username', 'email', 'mobile_number')
     ordering = ('username',)
 
 admin.site.register(Customer, CustomerAdmin)

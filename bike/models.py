@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 # from django.contrib.auth import get_user_model
@@ -131,7 +132,7 @@ class Contact(models.Model):
     description=models.TextField(null=True)
         
 class Wish(models.Model):
-    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE)  
+    user = models.ForeignKey(settings.BIKE_USER_MODEL, on_delete=models.CASCADE)  
     item = models.ForeignKey(Items, on_delete=models.CASCADE)  # Reference Items instead of Products
     image = models.ImageField(upload_to='cart/', blank=True, null=True)
     name = models.TextField(null=True)
@@ -165,7 +166,7 @@ from django.contrib.postgres.fields import JSONField  # ✅ Use JSONField
 UserProfile = get_user_model()
 
 class Order(models.Model):
-    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE,blank=True, null=True)
+    user = models.ForeignKey(settings.BIKE_USER_MODEL, on_delete=models.CASCADE,blank=True, null=True)
     name = models.CharField(max_length=255,blank=True, null=True)  # ✅ Store Name
     address = models.TextField()  # ✅ Store Address
     wishlist_items = models.JSONField(default=list,blank=True, null=True)  # ✅ Store wishlist items as JSON

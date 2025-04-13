@@ -14,7 +14,8 @@ from ecomapp.models import Customer  # Import your custom user model
 class UserRegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = Customer
-        fields = ['id', 'username', 'email', 'password', 'role']
+        # fields = ['id', 'username', 'email', 'password', 'role']
+        fields = "__all__"
 
     def validate_password(self, value):
         """Ensure password is hashed before saving"""

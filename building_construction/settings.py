@@ -155,8 +155,13 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'building_construction.wsgi.application'
-AUTH_USER_MODEL = 'bike.UserProfile'  # Replace 'yourapp' with your actual app name
+# AUTH_USER_MODEL = 'bike.UserProfile'  # Replace 'yourapp' with your actual app name
+# AUTH_USER_MODEL = 'ecomapp.Customer'  # Replace 'yourapp' with your actual app name
 
+
+# Defining variables for user models
+BIKE_USER_MODEL = 'bike.UserProfile'
+ECOM_USER_MODEL = 'ecomapp.Customer'
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases

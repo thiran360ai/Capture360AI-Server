@@ -1,3 +1,6 @@
+from datetime import timedelta
+from time import timezone
+from tokenize import Token
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
@@ -154,7 +157,7 @@ def login_user(request):
             return Response({"detail": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED)
 
         # Generate JWT tokens
-        refresh = RefreshToken.for_user(user)
+        refresh = refresh_token.for_user(user)
         access_token = str(refresh.access_token)
         refresh_token = str(refresh)
 

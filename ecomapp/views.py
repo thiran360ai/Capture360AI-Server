@@ -62,16 +62,16 @@ def register_user(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login_user(request):
-    phone_number = request.data.get('phone_number')
+    mobile_number = request.data.get('mobile_number')
     password = request.data.get('password')
 
-    if not phone_number or not password:
-        return Response({'error': 'Phone number and password are required'}, status=status.HTTP_400_BAD_REQUEST)
+    if not mobile_number or not password:
+        return Response({'error': 'Mobile number and password are required'}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        user = User.objects.get(phone_number=phone_number)
-    except User.DoesNotExist:
-        return Response({'error': 'Invalid phone number or password'}, status=status.HTTP_401_UNAUTHORIZED)
+        user = Customer.objects.get(mobile_number=mobile_number)
+    except Customer.DoesNotExist:
+        return Response({'error': 'Invalid mobile number or password'}, status=status.HTTP_401_UNAUTHORIZED)
 
     if not user.check_password(password):
         return Response({'error': 'Invalid mobile number or password'}, status=status.HTTP_401_UNAUTHORIZED)
@@ -83,8 +83,7 @@ def login_user(request):
         'user': {
             'id': user.id,
             'username': user.username,
-            # 'email': user.email,
-            'phone_number': user.phone_number,
+            'mobile_number': user.mobile_number,
             'role': user.role
         }
     }, status=status.HTTP_200_OK)

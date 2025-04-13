@@ -45,7 +45,8 @@ class GPSData(models.Model):
     max_speed = models.JSONField(default=list,null=True, blank=True)
     battery_level = models.JSONField(default=list,null=True, blank=True)
     ignition_on = models.JSONField(default=list,null=True, blank=True)
-    date = models.DateField(default=timezone.now)
+    timestamps = models.JSONField(default=list, null=True, blank=True)
+    date = models.DateTimeField(auto_now_add=True)
 
     def _str_(self):
         return f"GPS Data for {self.device} on {self.date}"

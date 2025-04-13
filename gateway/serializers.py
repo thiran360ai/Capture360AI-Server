@@ -18,6 +18,9 @@ class DeviceSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 class GPSDataSerializer(serializers.ModelSerializer):
+    timestamp = serializers.SerializerMethodField()
     class Meta:
         model = GPSData
         fields = "__all__"
+    def get_timestamp(self, obj):
+        return obj.date.strftime("%Y-%m-%d %H:%M:%S")

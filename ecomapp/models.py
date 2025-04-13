@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-
+from django.conf import settings 
 
 # Custom User Model
 class Customer(AbstractUser):
@@ -12,7 +12,7 @@ class Customer(AbstractUser):
         ]
 
     email = models.EmailField(unique=True, blank=True, null=True)
-    phone_number = models.CharField(max_length=15, unique=True)
+    mobile_number = models.CharField(max_length=15, unique=True)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='customer',blank=True)
     latitude = models.FloatField(null=True, blank=True)
     longitude = models.FloatField(null=True, blank=True)
@@ -42,7 +42,7 @@ class Customer(AbstractUser):
 
 
 class Banner(models.Model):
-    shopkeeper = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name="banners", help_text="Shopkeeper who owns the banner")
+    shopkeeper = models.ForeignKey(settings.ECOM_USER_MODEL, on_delete=models.CASCADE, related_name="banners", help_text="Shopkeeper who owns the banner")
     title = models.CharField(max_length=255, help_text="Title of the banner")
     image = models.ImageField(upload_to="banners/", help_text="Upload banner image")
     description = models.TextField(blank=True, help_text="Short description")
@@ -77,7 +77,7 @@ class Subcategory(models.Model):
 
 
 class Profile(models.Model):
-    employee = models.ForeignKey(Customer, on_delete=models.CASCADE, help_text="Shop owner (employee)")
+    employee = models.ForeignKey(settings.ECOM_USER_MODEL, on_delete=models.CASCADE, help_text="Shop owner (employee)")
     shop_name = models.CharField(max_length=255, help_text="Name of the shop")
     shop_image = models.ImageField(upload_to='shops/', blank=True, null=True, help_text="Upload shop image")
     latitude = models.FloatField(null=True, blank=True)
@@ -170,7 +170,7 @@ class Order(models.Model):
         ('cancelled', 'Cancelled'),
     ]
     
-    user = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.ECOM_USER_MODEL, on_delete=models.CASCADE)
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)

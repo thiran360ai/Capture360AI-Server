@@ -109,8 +109,12 @@ from .models import UserProfile  # Ensure you're importing this
 
 from rest_framework import serializers
 from .models import UserProfile
+from django.conf import settings
+from django.apps import apps
 
 class UserSignupSerializer(serializers.ModelSerializer):
+    UserProfile = apps.get_model(settings.BIKE_USER_MODEL)
+
     role = serializers.ChoiceField(choices=UserProfile.ROLE_CHOICES, default='user')
 
     class Meta:

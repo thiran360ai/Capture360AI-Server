@@ -27,5 +27,11 @@ urlpatterns = [
         path('start/', views.start_attendance, name='start_attendance'),
         path('stop/', views.stop_attendance, name='stop_attendance'),
         path('pause/', views.pause_attendance, name='pause_attendance'),
+        
+        path('attendance/daily/', get_daily_attendance),
+        
+        path('attendance/organization/daily/', organization_daily_attendance, name='organization_daily_attendance'),
+
+
 
 ]

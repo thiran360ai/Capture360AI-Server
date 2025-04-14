@@ -37,9 +37,16 @@ class Device(models.Model):
 
 
 class GPSData(models.Model):
-    device = models.ForeignKey(Device, on_delete=models.CASCADE,blank=True,null=True)
-    latitude = models.FloatField()
-    longitude = models.FloatField()
-    timestamp = models.DateTimeField(default=timezone.now)
+    device = models.ForeignKey(Device, on_delete=models.CASCADE, blank=True, null=True)
+    latitude = models.JSONField(default=list,null=True, blank=True)
+    longitude = models.JSONField(default=list,null=True, blank=True)
+    engine_status = models.JSONField(default=list,null=True, blank=True)
+    speed_kmh = models.JSONField(default=list,null=True, blank=True)
+    max_speed = models.JSONField(default=list,null=True, blank=True)
+    battery_level = models.JSONField(default=list,null=True, blank=True)
+    ignition_on = models.JSONField(default=list,null=True, blank=True)
+    timestamps = models.JSONField(default=list, null=True, blank=True)
+    date = models.DateTimeField(auto_now_add=True)
 
- 
+    def _str_(self):
+        return f"GPS Data for {self.device} on {self.date}"

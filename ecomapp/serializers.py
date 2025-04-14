@@ -52,19 +52,38 @@ class BannerSerializer(serializers.ModelSerializer):
 #         fields = ["id", "name", "category", "image"]
 
 
+# class SubcategorySerializer(serializers.ModelSerializer):
+#     category = serializers.CharField(source='category.name', read_only=True)
+
+#     class Meta:
+#         model = Subcategory
+#         fields = ["id", "name", "category", "image"]
+
+
+# class SubcategorySerializer(serializers.ModelSerializer):
+#     category_id = serializers.IntegerField(write_only=True)
+#     category = serializers.CharField(source='category.name', read_only=True)
+    
+
+#     class Meta:
+#         model = Subcategory
+#         fields = ["id", "name", "category_id", "category", "image"]
+
 class SubcategorySerializer(serializers.ModelSerializer):
+    category_id = serializers.IntegerField(write_only=True)
     category = serializers.CharField(source='category.name', read_only=True)
 
     class Meta:
         model = Subcategory
-        fields = ["id", "name", "category", "image"]
+        fields = ["id", "name", "category_id", "category", "image"]
 
-# class CategorySerializer(serializers.ModelSerializer):
-#     subcategories = SubcategorySerializer(many=True, read_only=True)  # Correct subcategories reference
+    def create(self, validated_data):
+        # Pull category_id and replace it with the actual category object
+        category_id = validated_data.pop('category_id')
+        category = Category.objects.get(id=category_id)
+        return Subcategory.objects.create(category=category, **validated_data)
 
-#     class Meta:
-#         model = Category
-#         fields = ["id", "name", "image", "subcategories"]
+
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
@@ -76,20 +95,31 @@ class ProfileSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 # class ProductSerializer(serializers.ModelSerializer):
+#     category = serializers.CharField(source='category.name', read_only=True)
+#     subcategory = serializers.CharField(source='subcategory.name', read_only=True)
+#     shop = serializers.CharField(source='shop.shop_name', read_only=True)  # <-- corrected here
+
 #     class Meta:
 #         model = Product
-#         fields = '__all__'
+#         fields = [
+#             "id", "name", "brand", "description", "warranty", "return_policy",
+#             "is_active", "created_at", "updated_at",
+#             "shop",  # will now show the correct shop name
+#             "category", "subcategory"
+#         ]
 class ProductSerializer(serializers.ModelSerializer):
     category = serializers.CharField(source='category.name', read_only=True)
     subcategory = serializers.CharField(source='subcategory.name', read_only=True)
-    shop = serializers.CharField(source='shop.shop_name', read_only=True)  # <-- corrected here
+    shop_name = serializers.CharField(source='shop.shop_name', read_only=True)  # Display only
+    shop_id = serializers.PrimaryKeyRelatedField(source='shop', queryset=Profile.objects.all(), write_only=True)  # 👈 Accept shop_id during POST
 
     class Meta:
         model = Product
         fields = [
             "id", "name", "brand", "description", "warranty", "return_policy",
             "is_active", "created_at", "updated_at",
-            "shop",  # will now show the correct shop name
+            "shop_id",      # 👈 Required for POST
+            "shop_name",    # 👈 Used in GET
             "category", "subcategory"
         ]
 

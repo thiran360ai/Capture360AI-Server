@@ -25,6 +25,8 @@ class Organization(models.Model):
         return self.key
 
 # Employee Model
+# The `Employee` class defines a model for employees with various fields such as email, device ID,
+# role, organizations, and permissions in a Django application.
 class Employee(AbstractUser):
     ROLE_CHOICES = (
         ('admin', 'Admin'),

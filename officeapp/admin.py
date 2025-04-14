@@ -47,7 +47,7 @@ class AttendanceAdmin(admin.ModelAdmin):
     list_display = ('employee', 'date', 'total_hours')  # Display these fields in the admin list view
     search_fields = ('employee__name', 'date')  # Allow search by employee name and date
     list_filter = ('date', 'employee')  # Add filters for date and employee
-    readonly_fields = ('total_hours',)  # Make total_hours read-only
+    # readonly_fields = ('total_hours',)  # Make total_hours read-only
     
     def get_logs(self, obj):
         return obj.logs  # Display logs as a readable format

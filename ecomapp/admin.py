@@ -6,19 +6,7 @@ from .models import (
     Review, Address, Payment, DeliveryPartner
 )
 
-# # Custom UserAdmin
-# @admin.register(Customer)
-# class CustomerAdmin(UserAdmin):
-#     model = Customer
-#     list_display = ('username', 'email', 'role', 'phone_number', 'is_active', 'is_staff')
-#     list_filter = ('role', 'is_active', 'is_staff')
-#     fieldsets = UserAdmin.fieldsets + (
-#         (None, {
-#             'fields': ('phone_number', 'role', 'latitude', 'longitude', 'user_address')
-#         }),
-#     )
-#     search_fields = ('username', 'email', 'phone_number')
-#     ordering = ('username',)
+
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import Customer
@@ -38,7 +26,7 @@ class CustomerAdmin(UserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('username', 'password1', 'password2', 'email', 'phone_number', 'role', 'latitude', 'longitude', 'user_address'),
+            'fields': ('username', 'password1', 'password2', 'email', 'mobile_number', 'role', 'latitude', 'longitude', 'user_address'),
         }),
     )
 

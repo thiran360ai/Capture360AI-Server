@@ -188,6 +188,30 @@ def manage_categories(request):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+# @api_view(['GET', 'POST'])
+# @permission_classes([AllowAny])  # 🔓 Anyone can access
+# def manage_subcategories(request):
+#     if request.method == 'GET':
+#         category_id = request.query_params.get('category_id')
+#         subcategories = Subcategory.objects.filter(category_id=category_id) if category_id else Subcategory.objects.all()
+#         serializer = SubcategorySerializer(subcategories, many=True)
+#         return Response(serializer.data, status=status.HTTP_200_OK)
+
+#     elif request.method == 'POST':
+#         data = request.data
+
+#         # If a single subcategory object is passed, wrap it in a list
+#         if isinstance(data, dict):
+#             data = [data]
+
+#         serializer = SubcategorySerializer(data=data, many=True)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 @api_view(['GET', 'POST'])
 @permission_classes([AllowAny])  # 🔓 Anyone can access
 def manage_subcategories(request):
@@ -210,8 +234,6 @@ def manage_subcategories(request):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
 
 @api_view(['GET', 'POST'])
 @permission_classes([AllowAny])  # ✅ Customers can GET without authentication
@@ -344,41 +366,59 @@ def delete_product_image(request, image_id):
 
 
 
+# @api_view(['GET', 'POST'])
+# @permission_classes([IsAuthenticated])
+# @permission_classes([AllowAny])  # ✅ Customers can GET without authentication
+
+# def product_list_create(request):
+#     print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}, Role: {getattr(request.user, 'role', None)}")
+
+#     # ✅ GET: Public Access (Customers & Shopkeepers)
+#     if request.method == 'GET':
+#         products = Product.objects.all()
+#         serializer = ProductSerializer(products, many=True)
+#         return Response(serializer.data, status=status.HTTP_200_OK)
+
+#     # ✅ POST: Only Shopkeepers can add products
+#     if request.method == 'POST':
+#         if not request.user.is_authenticated:
+#             return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
+
+#         user_role = getattr(request.user, 'role', "").lower()
+#         if user_role != "shopkeeper":
+#             return Response({"error": "Only shopkeepers can add products"}, status=status.HTTP_403_FORBIDDEN)
+
+#         # ✅ Fetch the correct shop profile using `email` or another unique field
+#         try:
+#             shop_profile = Profile.objects.get(email=request.user.email)  # Adjust field if necessary
+#         except Profile.DoesNotExist:
+#             return Response({"error": "Shop profile not found"}, status=status.HTTP_400_BAD_REQUEST)
+
+#         # ✅ Save product with correct shop
+#         serializer = ProductSerializer(data=request.data)
+#         if serializer.is_valid():
+#             serializer.save(shop=shop_profile)
+#             return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 @api_view(['GET', 'POST'])
-@permission_classes([AllowAny])  # ✅ Customers can GET without authentication
-
+@permission_classes([AllowAny])  # ✅ Allows anyone (even anonymous users)
 def product_list_create(request):
-    print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}, Role: {getattr(request.user, 'role', None)}")
-
-    # ✅ GET: Public Access (Customers & Shopkeepers)
     if request.method == 'GET':
         products = Product.objects.all()
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    # ✅ POST: Only Shopkeepers can add products
     if request.method == 'POST':
-        if not request.user.is_authenticated:
-            return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
-
-        user_role = getattr(request.user, 'role', "").lower()
-        if user_role != "shopkeeper":
-            return Response({"error": "Only shopkeepers can add products"}, status=status.HTTP_403_FORBIDDEN)
-
-        # ✅ Fetch the correct shop profile using `email` or another unique field
-        try:
-            shop_profile = Profile.objects.get(email=request.user.email)  # Adjust field if necessary
-        except Profile.DoesNotExist:
-            return Response({"error": "Shop profile not found"}, status=status.HTTP_400_BAD_REQUEST)
-
-        # ✅ Save product with correct shop
         serializer = ProductSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(shop=shop_profile)
+            serializer.save()  # ✅ No user or profile linking required
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+
 
 # ✅ Retrieve, Update, Delete a product (Only Shopkeepers can modify, GET is public)
 

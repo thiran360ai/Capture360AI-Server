@@ -446,6 +446,13 @@ from rest_framework.decorators import api_view
 from .models import Attendance, Device
 from .utils import haversine  # Assuming you have a haversine function
 
+from datetime import datetime
+from django.utils.timezone import now
+import json
+from django.http import JsonResponse
+from rest_framework.decorators import api_view
+from officeapp.models import Attendance, Device  # Update with your actual app name
+
 @api_view(['POST'])
 def start_attendance(request):
     if request.method == 'POST':
@@ -487,14 +494,14 @@ def start_attendance(request):
                         )
 
                         logs = json.loads(today_attendance.logs)
-                        logs.append({"action": "start", "time": now().strftime("%Y-%m-%d %H:%M:%S")})  # Include seconds
+                        current_time = now().strftime("%Y-%m-%d %H:%M:%S")  # ✅ Include seconds
+                        logs.append({"action": "start", "time": current_time})
 
                         today_attendance.logs = json.dumps(logs)
                         today_attendance.save()
 
                         return JsonResponse({
-                            "message": "Attendance started successfully",
-                            "timestamp": now().strftime("%Y-%m-%d %H:%M:%S")  # Include seconds in response
+                            "message": "Attendance started successfully"
                         }, status=200)
 
             return JsonResponse({"error": "You are too far from all assigned organizations."}, status=400)
@@ -504,6 +511,7 @@ def start_attendance(request):
 
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
+
 
 # @api_view(['POST'])
 # def start_attendance(request):
@@ -615,40 +623,58 @@ def resume_attendance(request):
         return JsonResponse({"error": "No paused attendance found"}, status=400)
 
 # Stop Attendance
+from django.utils import timezone
+import json
+from django.http import JsonResponse
+from rest_framework.decorators import api_view
+# from your_app.models import Attendance  # Update with your actual app name
+
 @api_view(['POST'])
 def stop_attendance(request):
     try:
         data = json.loads(request.body)
         device_id = data.get('device_id')
 
+        # Get today's attendance
         attendance = Attendance.objects.get(
             employee__device__device_id=device_id,
             date=timezone.now().date()
         )
 
         logs = json.loads(attendance.logs)
-        logs.append({"action": "stop", "time": str(timezone.now())})
-
-        # ✅ Calculate total hours
-        total_duration = 0
+        filtered_logs = []
         last_start = None
+        total_duration = 0
 
         for log in logs:
-            try:
-                action = log['action']
-                log_time = timezone.datetime.fromisoformat(log['time'].replace("Z", "+00:00"))  # ✅ Fixed ISO format issue
+            action = log['action']
+            
+            # ✅ Convert log time to a timezone-aware datetime
+            log_time = timezone.make_aware(
+                timezone.datetime.fromisoformat(log['time'].replace("Z", "+00:00"))
+            ) if timezone.is_naive(timezone.datetime.fromisoformat(log['time'].replace("Z", "+00:00"))) else timezone.datetime.fromisoformat(log['time'].replace("Z", "+00:00"))
 
-                if action in ['start', 'resume']:
-                    last_start = log_time
-                elif action in ['pause', 'stop'] and last_start:
+            if action in ['start', 'resume']:
+                last_start = log_time
+                filtered_logs.append(log)
+
+            elif action in ['pause', 'stop']:
+                if last_start:  # Only pair valid start-stop times
                     total_duration += (log_time - last_start).total_seconds() / 3600
                     last_start = None
 
-            except Exception as e:
-                print(f"Error processing log: {log}, Error: {e}")  # Debugging
-                continue
+                # ✅ Keep only the latest "stop" log
+                if action == 'stop':
+                    filtered_logs = [log for log in filtered_logs if log['action'] != 'stop']
+                
+                filtered_logs.append(log)
 
-        attendance.logs = json.dumps(logs)
+        # ✅ Append new "stop" action with timezone-aware datetime
+        stop_log = {"action": "stop", "time": str(timezone.now())}
+        filtered_logs.append(stop_log)
+
+        # ✅ Save the updated logs and total hours
+        attendance.logs = json.dumps(filtered_logs)
         attendance.total_hours = round(total_duration, 2)
         attendance.save()
 
@@ -950,3 +976,85 @@ class GetTotalHoursView(View):
             return JsonResponse({"error": "Invalid JSON data"}, status=400)
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
+
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from django.utils.dateparse import parse_date
+from .models import Employee, Attendance
+
+
+@api_view(['POST'])
+def get_daily_attendance(request):
+    email = request.data.get('email')
+    date_str = request.data.get('date')  # Expected format: 'YYYY-MM-DD'
+
+    if not email or not date_str:
+        return Response({"error": "email and date are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        date = parse_date(date_str)
+        employee = Employee.objects.get(email=email)
+    except Employee.DoesNotExist:
+        return Response({"error": "Employee not found."}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        attendance = Attendance.objects.get(employee=employee, date=date)
+        return Response({
+            "email": email,
+            "date": attendance.date,
+            "logs": attendance.logs,
+            "total_hours": attendance.total_hours
+        }, status=status.HTTP_200_OK)
+    except Attendance.DoesNotExist:
+        return Response({"message": "No attendance found for this date."}, status=status.HTTP_204_NO_CONTENT)
+
+
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from django.utils.dateparse import parse_date
+from .models import Employee, Attendance, Organization
+
+
+@api_view(['POST'])
+def organization_daily_attendance(request):
+    organization_id = request.data.get('organization_id')
+    date_str = request.data.get('date')
+
+    if not organization_id or not date_str:
+        return Response({"error": "organization_id and date are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        date = parse_date(date_str)
+        organization = Organization.objects.get(id=organization_id)
+    except Organization.DoesNotExist:
+        return Response({"error": "Organization not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    employees = Employee.objects.filter(organizations=organization)
+
+    total_hours = 0
+    attendance_data = []
+
+    for emp in employees:
+        try:
+            attendance = Attendance.objects.get(employee=emp, date=date)
+            total_hours += attendance.total_hours
+            attendance_data.append({
+                "employee_name": emp.name,
+                "email": emp.email,
+                "total_hours": attendance.total_hours,
+                "logs": attendance.logs
+            })
+        except Attendance.DoesNotExist:
+            continue  # No attendance for that day
+
+    return Response({
+        "organization": organization.name,
+        "date": date,
+        "total_employees": len(attendance_data),
+        "total_hours": total_hours,
+        "attendance_details": attendance_data
+    }, status=status.HTTP_200_OK)

@@ -1058,3 +1058,51 @@ def organization_daily_attendance(request):
         "total_hours": total_hours,
         "attendance_details": attendance_data
     }, status=status.HTTP_200_OK)
+
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from .models import Attendance, Employee
+from datetime import datetime
+from django.utils.dateparse import parse_date
+
+@api_view(['POST'])
+def get_attendance_by_range(request):
+    email = request.data.get('email')
+    from_date_str = request.data.get('from_date')
+    to_date_str = request.data.get('to_date')
+
+    if not all([email, from_date_str, to_date_str]):
+        return Response({"error": "email, from_date, and to_date are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        from_date = parse_date(from_date_str)
+        to_date = parse_date(to_date_str)
+        employee = Employee.objects.get(email=email)
+    except Employee.DoesNotExist:
+        return Response({"error": "Employee not found."}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    attendances = Attendance.objects.filter(
+        employee=employee,
+        date__range=(from_date, to_date)
+    ).order_by('date')
+
+    if not attendances.exists():
+        return Response({"message": "No attendance records found in the given date range."}, status=status.HTTP_204_NO_CONTENT)
+
+    result = []
+    for record in attendances:
+        result.append({
+            "date": record.date,
+            "logs": record.logs,
+            "total_hours": record.total_hours
+        })
+
+    return Response({
+        "email": email,
+        "from_date": from_date,
+        "to_date": to_date,
+        "attendance": result
+    }, status=status.HTTP_200_OK)

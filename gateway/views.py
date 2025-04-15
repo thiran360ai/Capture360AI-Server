@@ -157,23 +157,23 @@ def login_user(request):
             return Response({"detail": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED)
 
         # Generate JWT tokens
-        refresh = refresh_token.for_user(user)
-        access_token = str(refresh.access_token)
-        refresh_token = str(refresh)
+        # refresh = refresh_token.for_user(user)
+        # access_token = str(refresh.access_token)
+        # refresh_token = str(refresh)
 
         # Serialize user data
         serializer = CustomUserSerializer(user)
 
         # Return response
         response_data = {
-            "access": access_token,
-            "refresh": refresh_token,
+            # "access": access_token,
+            # "refresh": refresh_token,
             "success": "Login successful",
             "user_id": user.id,
             "user": serializer.data,  # Include user data
             "status": "success"
         }
-
+        print(response_data)
         return Response(response_data, status=status.HTTP_200_OK)
 
     except Exception as e:
@@ -329,3 +329,140 @@ def get_user_gps_data(request, user_id):
 
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+from django.utils.dateparse import parse_date
+from rest_framework.response import Response
+from rest_framework.decorators import api_view
+from .models import GPSData, Device
+
+from django.utils.dateparse import parse_datetime
+from rest_framework.response import Response
+from rest_framework.decorators import api_view
+from .models import GPSData, Device
+
+@api_view(['POST'])
+def update_gps_data(request):
+    data = request.data
+    device_id = data.get('id')
+    name = data.get('name')  # TN 23 DS 2233
+
+    device, created = Device.objects.get_or_create(device=device_id)
+
+    # Update name if not set or changed
+    if name and (not device.name or device.name != name):
+        device.name = name
+        device.save()
+
+    gps_data, _ = GPSData.objects.get_or_create(device=device)
+
+    gps_data.latitude.append(float(data.get('latitude')))
+    gps_data.longitude.append(float(data.get('longitude')))
+    gps_data.battery_level.append(data.get('battery_level'))
+    gps_data.ignition_on.append(data.get('ignition_on'))
+    gps_data.speed_kmh.append(data.get('speed_kmh'))
+    gps_data.max_speed.append(data.get('max_speed'))
+
+    gps_data.save()
+
+    return Response({'status': 'GPS data updated successfully'})
+
+
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from .models import GPSData
+from .serializers import GPSDataSerializer
+
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from .models import GPSData, Device
+from datetime import date
+from django.utils.timezone import now
+
+@api_view(['POST'])
+def post_gps_data(request):
+    data = request.data
+
+    device_id = data.get('device')
+    if not device_id:
+        return Response({'error': 'Device ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        device = Device.objects.get(id=device_id)
+    except Device.DoesNotExist:
+        return Response({'error': 'Device not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Get today's GPSData entry if exists
+    today = date.today()
+    gps_data = GPSData.objects.filter(device=device, date__date=today).first()
+
+    if not gps_data:
+        gps_data = GPSData.objects.create(device=device)
+
+    # Append data to existing JSON fields
+    gps_data.latitude.extend(data.get('latitude', []))
+    gps_data.longitude.extend(data.get('longitude', []))
+    gps_data.engine_status.extend(data.get('engine_status', []))
+    gps_data.speed_kmh.extend(data.get('speed_kmh', []))
+    gps_data.max_speed.extend(data.get('max_speed', []))
+    gps_data.battery_level.extend(data.get('battery_level', []))
+    gps_data.ignition_on.extend(data.get('ignition_on', []))
+
+    gps_data.save()
+
+    return Response({'message': 'GPS data updated for today', 'device': device_id})
+
+
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from .models import GPSData, Device
+from .serializers import GPSDataSerializer
+@api_view(['POST'])
+def get_filtered_gps_data(request):
+    data = request.data
+    device_id = data.get('device')
+    name = data.get('name')
+
+    if not device_id or not name:
+        return Response({'error': 'Both device and name are required in the payload'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        # Get device by ID and name
+        device = Device.objects.get(id=device_id, name=name)
+
+        # Get latest GPSData record
+        latest_gps_data = GPSData.objects.filter(device=device).order_by('-date').first()
+
+        if latest_gps_data:
+            # Extract last values safely
+            response_data = {
+                "device": device.id,
+                "latitude": latest_gps_data.latitude[-1] if latest_gps_data.latitude else None,
+                "longitude": latest_gps_data.longitude[-1] if latest_gps_data.longitude else None,
+                "engine_status": latest_gps_data.engine_status[-1] if latest_gps_data.engine_status else None,
+                "speed_kmh": latest_gps_data.speed_kmh[-1] if latest_gps_data.speed_kmh else None,
+                "max_speed": latest_gps_data.max_speed[-1] if latest_gps_data.max_speed else None,
+                "battery_level": latest_gps_data.battery_level[-1] if latest_gps_data.battery_level else None,
+                "ignition_on": latest_gps_data.ignition_on[-1] if latest_gps_data.ignition_on else None,
+                "date": latest_gps_data.date,
+            }
+            return Response(response_data)
+
+        else:
+            return Response({'error': 'No GPS data found for the specified device and name'}, status=status.HTTP_404_NOT_FOUND)
+
+    except Device.DoesNotExist:
+        return Response({'error': 'Device not found with the provided ID and name'}, status=status.HTTP_404_NOT_FOUND)
+
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from .models import Device
+from .serializers import DeviceSerializer
+
+@api_view(['GET'])
+def devices_by_user(request, user_id):
+    devices = Device.objects.filter(user_id=user_id)
+    serializer = DeviceSerializer(devices, many=True)
+    return Response(serializer.data)

@@ -24,3 +24,12 @@ class GPSDataSerializer(serializers.ModelSerializer):
         fields = "__all__"
     # def get_timestamp(self, obj):
     #     return obj.date.strftime("%Y-%m-%d %H:%M:%S")
+    
+    
+from rest_framework import serializers
+from .models import Device
+
+# class DeviceSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Device
+#         fields = ['id', 'user', 'device', 'name']

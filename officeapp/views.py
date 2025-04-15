@@ -453,64 +453,191 @@ from django.http import JsonResponse
 from rest_framework.decorators import api_view
 from officeapp.models import Attendance, Device  # Update with your actual app name
 
+# @api_view(['POST'])
+# def start_attendance(request):
+#     if request.method == 'POST':
+#         try:
+#             data = json.loads(request.body)
+#             device_id = data.get('device_id')
+#             user_latitude = float(data.get('latitude'))
+#             user_longitude = float(data.get('longitude'))
+
+#             # ✅ Check if the device exists
+#             device = Device.objects.get(device_id=device_id)
+
+#             # ✅ Ensure the device is active
+#             if not device.is_active:
+#                 return JsonResponse({"error": "Device is inactive. Attendance cannot be started."}, status=403)
+
+#             employee = device.user  # Assuming 'user' field is linked to Employee
+
+#             # ✅ Ensure the employee is active
+#             if not employee.is_active:
+#                 return JsonResponse({"error": "Employee is inactive. Attendance cannot be started."}, status=403)
+
+#             # ✅ Ensure the user is linked to at least one organization
+#             if not employee.organizations.exists():
+#                 return JsonResponse({"error": "User is not linked to any Organization."}, status=400)
+
+#             # ✅ Loop through all organizations and check distance
+#             for organization in employee.organizations.all():
+#                 if organization.latitude and organization.longitude:
+#                     distance = haversine(user_latitude, user_longitude, organization.latitude, organization.longitude)
+#                     print(f"Distance from {organization.name}: {distance} meters")  # Debugging
+
+#                     if distance <= 100:  # ✅ Allow attendance if within 100m of ANY organization
+#                         # ✅ Start Attendance
+#                         today_attendance, created = Attendance.objects.get_or_create(
+#                             employee=employee,
+#                             date=now().date(),
+#                             defaults={'logs': json.dumps([]), 'total_hours': 0}
+#                         )
+
+#                         logs = json.loads(today_attendance.logs)
+#                         current_time = now().strftime("%Y-%m-%d %H:%M:%S")  # ✅ Include seconds
+#                         logs.append({"action": "start", "time": current_time})
+
+#                         today_attendance.logs = json.dumps(logs)
+#                         today_attendance.save()
+
+#                         return JsonResponse({
+#                             "message": "Attendance started successfully"
+#                         }, status=200)
+
+#             return JsonResponse({"error": "You are too far from all assigned organizations."}, status=400)
+
+#         except Device.DoesNotExist:
+#             return JsonResponse({"error": "Device not found"}, status=404)
+
+#         except Exception as e:
+#             return JsonResponse({"error": str(e)}, status=500)
+
+from datetime import datetime
+import json
+from django.http import JsonResponse
+from rest_framework.decorators import api_view
+from .models import Device, Attendance
+from django.utils.timezone import now
+from .utils import haversine  # Assuming you have a utility function for calculating distance
+from django.http import JsonResponse
+from django.utils import timezone
+from rest_framework.decorators import api_view
+import json
+import math
+
+def haversine(lat1, lon1, lat2, lon2):
+    # Radius of the Earth in meters
+    R = 6371000
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    delta_phi = math.radians(lat2 - lat1)
+    delta_lambda = math.radians(lon2 - lon1)
+
+    a = math.sin(delta_phi / 2) ** 2 + \
+        math.cos(phi1) * math.cos(phi2) * \
+        math.sin(delta_lambda / 2) ** 2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+    return R * c  # Distance in meters
+
 @api_view(['POST'])
 def start_attendance(request):
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            device_id = data.get('device_id')
-            user_latitude = float(data.get('latitude'))
-            user_longitude = float(data.get('longitude'))
+    try:
+        data = json.loads(request.body)
+        device_id = data.get('device_id')
+        user_latitude = float(data.get('latitude'))
+        user_longitude = float(data.get('longitude'))
+        reason = data.get('reason', 'manual')  # Default to 'manual' if not provided
 
-            # ✅ Check if the device exists
-            device = Device.objects.get(device_id=device_id)
+        # Retrieve the device
+        device = Device.objects.get(device_id=device_id)
 
-            # ✅ Ensure the device is active
-            if not device.is_active:
-                return JsonResponse({"error": "Device is inactive. Attendance cannot be started."}, status=403)
+        # Check if the device is active
+        if not device.is_active:
+            return JsonResponse({"error": "Device is inactive. Attendance cannot be started."}, status=403)
 
-            employee = device.user  # Assuming 'user' field is linked to Employee
+        employee = device.user  # Assuming 'user' field is linked to Employee
 
-            # ✅ Ensure the employee is active
-            if not employee.is_active:
-                return JsonResponse({"error": "Employee is inactive. Attendance cannot be started."}, status=403)
+        # Check if the employee is active
+        if not employee.is_active:
+            return JsonResponse({"error": "Employee is inactive. Attendance cannot be started."}, status=403)
 
-            # ✅ Ensure the user is linked to at least one organization
-            if not employee.organizations.exists():
-                return JsonResponse({"error": "User is not linked to any Organization."}, status=400)
+        # Ensure the user is linked to at least one organization
+        if not employee.organizations.exists():
+            return JsonResponse({"error": "User is not linked to any Organization."}, status=400)
 
-            # ✅ Loop through all organizations and check distance
-            for organization in employee.organizations.all():
-                if organization.latitude and organization.longitude:
-                    distance = haversine(user_latitude, user_longitude, organization.latitude, organization.longitude)
-                    print(f"Distance from {organization.name}: {distance} meters")  # Debugging
+        # Loop through all organizations and check distance
+        for organization in employee.organizations.all():
+            if organization.latitude and organization.longitude:
+                distance = haversine(user_latitude, user_longitude, organization.latitude, organization.longitude)
+                if distance <= 100:
+                    # Check if today's attendance already exists
+                    today_attendance, created = Attendance.objects.get_or_create(
+                        employee=employee,
+                        date=timezone.now().date(),
+                        defaults={'logs': json.dumps([]), 'total_hours': 0}
+                    )
 
-                    if distance <= 100:  # ✅ Allow attendance if within 100m of ANY organization
-                        # ✅ Start Attendance
-                        today_attendance, created = Attendance.objects.get_or_create(
-                            employee=employee,
-                            date=now().date(),
-                            defaults={'logs': json.dumps([]), 'total_hours': 0}
-                        )
+                    # Load existing logs
+                    logs = today_attendance.logs if isinstance(today_attendance.logs, list) else json.loads(today_attendance.logs)
+                    current_time = timezone.now().strftime("%Y-%m-%d %H:%M:%S")
 
-                        logs = json.loads(today_attendance.logs)
-                        current_time = now().strftime("%Y-%m-%d %H:%M:%S")  # ✅ Include seconds
-                        logs.append({"action": "start", "time": current_time})
+                    if not created:
+                        # Check if the last action was 'pause'
+                        if logs and logs[-1].get('action') == 'pause':
+                            # Append a 'resume' action
+                            logs.append({"action": "resume", "time": current_time, "reason": reason})
+                            
+                            # Calculate total hours up to this point
+                            total_seconds = 0
+                            start_time = None
+                            for log in logs:
+                                action = log.get("action")
+                                time_str = log.get("time")
+                                try:
+                                    time_obj = timezone.datetime.strptime(time_str, "%Y-%m-%d %H:%M:%S")
+                                except ValueError:
+                                    time_obj = timezone.datetime.fromisoformat(time_str)
 
-                        today_attendance.logs = json.dumps(logs)
-                        today_attendance.save()
+                                if action in ["start", "resume"]:
+                                    start_time = time_obj
+                                elif action in ["pause", "stop"] and start_time:
+                                    duration = (time_obj - start_time).total_seconds()
+                                    total_seconds += duration
+                                    start_time = None
 
-                        return JsonResponse({
-                            "message": "Attendance started successfully"
-                        }, status=200)
+                            total_hours = round(total_seconds / 3600, 2)
+                            today_attendance.total_hours = total_hours
+                            today_attendance.logs = json.dumps(logs)
+                            today_attendance.save()
 
-            return JsonResponse({"error": "You are too far from all assigned organizations."}, status=400)
+                            return JsonResponse({
+                                "message": "Attendance resumed successfully",
+                                "total_hours": total_hours
+                            }, status=200)
+                        else:
+                            return JsonResponse({
+                                "message": "Attendance already started for today.",
+                                "total_hours": today_attendance.total_hours
+                            }, status=200)
 
-        except Device.DoesNotExist:
-            return JsonResponse({"error": "Device not found"}, status=404)
+                    # If it's a new attendance, start the clock
+                    logs.append({"action": "start", "time": current_time, "reason": reason})
+                    today_attendance.logs = json.dumps(logs)
+                    today_attendance.save()
 
-        except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
+                    return JsonResponse({
+                        "message": "Attendance started successfully",
+                        "total_hours": 0
+                    }, status=200)
+
+        return JsonResponse({"error": "You are too far from all assigned organizations."}, status=400)
+
+    except Device.DoesNotExist:
+        return JsonResponse({"error": "Device not found"}, status=404)
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
 
 
 # @api_view(['POST'])
@@ -549,55 +676,127 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
 from .models import Attendance
 
-# Pause Attendance
-# @api_view(['POST'])
-# def pause_attendance(request):
-#     try:
-#         data = json.loads(request.body)
-#         device_id = data.get('device_id')
 
-#         attendance = Attendance.objects.get(
-#             employee__device__device_id=device_id,
-#             date=timezone.now().date()
-#         )
-
-#         logs = json.loads(attendance.logs)
-#         logs.append({"action": "pause", "time": str(timezone.now())})
-
-#         attendance.logs = json.dumps(logs)
-#         attendance.save()
-
-#         return JsonResponse({"message": "Attendance paused successfully"}, status=200)
-
-#     except Attendance.DoesNotExist:
-#         return JsonResponse({"error": "No active attendance found"}, status=400)
 from django.utils.timezone import now
-import json
-from django.http import JsonResponse
 from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from django.utils.timezone import now
 from .models import Attendance
+import json
+from datetime import datetime
+
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from django.utils.timezone import now
+from .models import Attendance
+from datetime import datetime
+
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from django.utils.timezone import now
+from .models import Attendance
+from datetime import datetime
+import json
+from geopy.distance import geodesic
 
 @api_view(['POST'])
 def pause_attendance(request):
     try:
+        # Parse JSON data from request body
         data = json.loads(request.body)
         device_id = data.get('device_id')
+        user_latitude = data.get('latitude')
+        user_longitude = data.get('longitude')
 
-        attendance = Attendance.objects.get(
-            employee__device__device_id=device_id,
-            date=now().date()
+        # Validate required fields
+        if not device_id or user_latitude is None or user_longitude is None:
+            return Response({"error": "Device ID, latitude, and longitude are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Convert latitude and longitude to float
+        try:
+            user_location = (float(user_latitude), float(user_longitude))
+        except ValueError:
+            return Response({"error": "Invalid latitude or longitude values."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Retrieve the employee associated with the device
+        employee = Employee.objects.get(device__device_id=device_id)
+
+        # Check if the user is within 100 meters of any associated organization
+        within_range = False
+        for organization in employee.organizations.all():
+            if organization.latitude and organization.longitude:
+                org_location = (organization.latitude, organization.longitude)
+                distance = geodesic(user_location, org_location).meters
+                print(f"Distance from {organization.name}: {distance} meters")  # Debugging
+
+                if distance <= 100:
+                    within_range = True
+                    break
+
+        if not within_range:
+            return Response({"error": "You are not within the allowed range to pause attendance."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Retrieve today's attendance record for the employee
+        attendance, created = Attendance.objects.get_or_create(
+            employee=employee,
+            date=now().date(),
+            defaults={'logs': json.dumps([]), 'total_hours': 0}
         )
 
-        logs = json.loads(attendance.logs)
-        logs.append({"action": "pause", "time": now().strftime("%Y-%m-%d %H:%M:%S")})  # Including seconds
+        # Ensure logs are in list format
+        logs = attendance.logs
+        if isinstance(logs, str):
+            logs = json.loads(logs)
 
-        attendance.logs = json.dumps(logs)
+        # Append the pause action with the current timestamp
+        current_time = now().strftime("%Y-%m-%d %H:%M:%S")
+        logs.append({"action": "pause", "time": current_time})
+
+        # Calculate total working hours
+        total_seconds = 0
+        start_time = None
+        for log in logs:
+            action = log.get("action")
+            time_str = log.get("time")
+            try:
+                time_obj = datetime.strptime(time_str, "%Y-%m-%d %H:%M:%S")
+            except ValueError:
+                # Handle time strings with microseconds or timezone info
+                time_obj = datetime.fromisoformat(time_str)
+
+            if action in ["start", "resume"] and start_time is None:
+                start_time = time_obj
+            elif action in ["pause", "stop"] and start_time is not None:
+                duration = (time_obj - start_time).total_seconds()
+                total_seconds += duration
+                start_time = None  # Reset start_time for the next interval
+
+        total_hours = round(total_seconds / 3600, 2)  # Convert seconds to hours
+
+        # Update attendance record
+        attendance.logs = logs
+        attendance.total_hours = total_hours
         attendance.save()
 
-        return JsonResponse({"message": "Attendance paused successfully", "timestamp": now().strftime("%Y-%m-%d %H:%M:%S")}, status=200)
+        return Response({
+            "message": "Attendance paused successfully",
+            "timestamp": current_time,
+            "total_hours": total_hours
+        }, status=status.HTTP_200_OK)
 
+    except Employee.DoesNotExist:
+        return Response({"error": "Employee not found."}, status=status.HTTP_400_BAD_REQUEST)
     except Attendance.DoesNotExist:
-        return JsonResponse({"error": "No active attendance found"}, status=400)
+        return Response({"error": "No active attendance found."}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        # Log the exception for debugging purposes
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.exception("An unexpected error occurred in pause_attendance.")
+        return Response({"error": "An internal error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # Resume Attendance
 @api_view(['POST'])
@@ -629,51 +828,151 @@ from django.http import JsonResponse
 from rest_framework.decorators import api_view
 # from your_app.models import Attendance  # Update with your actual app name
 
+# @api_view(['POST'])
+# def stop_attendance(request):
+#     try:
+#         data = json.loads(request.body)
+#         device_id = data.get('device_id')
+
+#         # Get today's attendance
+#         attendance = Attendance.objects.get(
+#             employee__device__device_id=device_id,
+#             date=timezone.now().date()
+#         )
+
+#         logs = json.loads(attendance.logs)
+#         filtered_logs = []
+#         last_start = None
+#         total_duration = 0
+
+#         for log in logs:
+#             action = log['action']
+            
+#             # ✅ Convert log time to a timezone-aware datetime
+#             log_time = timezone.make_aware(
+#                 timezone.datetime.fromisoformat(log['time'].replace("Z", "+00:00"))
+#             ) if timezone.is_naive(timezone.datetime.fromisoformat(log['time'].replace("Z", "+00:00"))) else timezone.datetime.fromisoformat(log['time'].replace("Z", "+00:00"))
+
+#             if action in ['start', 'resume']:
+#                 last_start = log_time
+#                 filtered_logs.append(log)
+
+#             elif action in ['pause', 'stop']:
+#                 if last_start:  # Only pair valid start-stop times
+#                     total_duration += (log_time - last_start).total_seconds() / 3600
+#                     last_start = None
+
+#                 # ✅ Keep only the latest "stop" log
+#                 if action == 'stop':
+#                     filtered_logs = [log for log in filtered_logs if log['action'] != 'stop']
+                
+#                 filtered_logs.append(log)
+
+#         # ✅ Append new "stop" action with timezone-aware datetime
+#         stop_log = {"action": "stop", "time": str(timezone.now())}
+#         filtered_logs.append(stop_log)
+
+#         # ✅ Save the updated logs and total hours
+#         attendance.logs = json.dumps(filtered_logs)
+#         attendance.total_hours = round(total_duration, 2)
+#         attendance.save()
+
+#         return JsonResponse({
+#             "message": "Attendance stopped successfully",
+#             "total_hours": attendance.total_hours
+#         }, status=200)
+
+#     except Attendance.DoesNotExist:
+#         return JsonResponse({"error": "No active attendance found"}, status=400)
+
+from django.http import JsonResponse
+from rest_framework.decorators import api_view
+from django.utils import timezone
+from .models import Attendance
+import json
+from django.http import JsonResponse
+from django.utils import timezone
+from rest_framework.decorators import api_view
+import json
+import math
+
+def haversine(lat1, lon1, lat2, lon2):
+    # Radius of the Earth in meters
+    R = 6371000
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    delta_phi = math.radians(lat2 - lat1)
+    delta_lambda = math.radians(lon2 - lon1)
+
+    a = math.sin(delta_phi / 2) ** 2 + \
+        math.cos(phi1) * math.cos(phi2) * \
+        math.sin(delta_lambda / 2) ** 2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+    return R * c  # Distance in meters
+
 @api_view(['POST'])
 def stop_attendance(request):
     try:
         data = json.loads(request.body)
         device_id = data.get('device_id')
+        user_latitude = float(data.get('latitude'))
+        user_longitude = float(data.get('longitude'))
 
-        # Get today's attendance
+        # Retrieve today's attendance record
         attendance = Attendance.objects.get(
             employee__device__device_id=device_id,
             date=timezone.now().date()
         )
 
-        logs = json.loads(attendance.logs)
+        employee = attendance.employee
+        organizations = employee.organizations.all()
+
+        # Check if user is within 100 meters of any organization
+        within_range = False
+        for org in organizations:
+            if org.latitude and org.longitude:
+                distance = haversine(user_latitude, user_longitude, org.latitude, org.longitude)
+                if distance <= 100:
+                    within_range = True
+                    break
+
+        if not within_range:
+            return JsonResponse({"error": "You are not within the allowed range to stop attendance."}, status=400)
+
+        # Process attendance logs
+        logs = attendance.logs if isinstance(attendance.logs, list) else json.loads(attendance.logs)
         filtered_logs = []
         last_start = None
         total_duration = 0
 
         for log in logs:
-            action = log['action']
-            
-            # ✅ Convert log time to a timezone-aware datetime
-            log_time = timezone.make_aware(
-                timezone.datetime.fromisoformat(log['time'].replace("Z", "+00:00"))
-            ) if timezone.is_naive(timezone.datetime.fromisoformat(log['time'].replace("Z", "+00:00"))) else timezone.datetime.fromisoformat(log['time'].replace("Z", "+00:00"))
+            action = log.get('action')
+            log_time_str = log.get('time')
 
-            if action in ['start', 'resume']:
-                last_start = log_time
-                filtered_logs.append(log)
+            if log_time_str:
+                log_time = timezone.make_aware(
+                    timezone.datetime.fromisoformat(log_time_str.replace("Z", "+00:00"))
+                ) if timezone.is_naive(timezone.datetime.fromisoformat(log_time_str.replace("Z", "+00:00"))) else timezone.datetime.fromisoformat(log_time_str.replace("Z", "+00:00"))
 
-            elif action in ['pause', 'stop']:
-                if last_start:  # Only pair valid start-stop times
-                    total_duration += (log_time - last_start).total_seconds() / 3600
-                    last_start = None
+                if action in ['start', 'resume']:
+                    last_start = log_time
+                    filtered_logs.append(log)
 
-                # ✅ Keep only the latest "stop" log
-                if action == 'stop':
-                    filtered_logs = [log for log in filtered_logs if log['action'] != 'stop']
-                
-                filtered_logs.append(log)
+                elif action in ['pause', 'stop']:
+                    if last_start:
+                        total_duration += (log_time - last_start).total_seconds() / 3600  # Convert seconds to hours
+                        last_start = None
 
-        # ✅ Append new "stop" action with timezone-aware datetime
-        stop_log = {"action": "stop", "time": str(timezone.now())}
+                    # Keep only the latest 'stop' log
+                    filtered_logs = [entry for entry in filtered_logs if entry.get('action') != 'stop']
+                    filtered_logs.append(log)
+
+        # Append a new 'stop' action with the current time
+        stop_log = {"action": "stop", "time": timezone.now().isoformat()}
         filtered_logs.append(stop_log)
 
-        # ✅ Save the updated logs and total hours
+        # Update the attendance record with the new logs and total hours
         attendance.logs = json.dumps(filtered_logs)
         attendance.total_hours = round(total_duration, 2)
         attendance.save()
@@ -685,8 +984,8 @@ def stop_attendance(request):
 
     except Attendance.DoesNotExist:
         return JsonResponse({"error": "No active attendance found"}, status=400)
-
-
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
 @method_decorator(csrf_exempt, name='dispatch')
 class ActiveDevicesView(View):
     def post(self, request):
@@ -1106,3 +1405,20 @@ def get_attendance_by_range(request):
         "to_date": to_date,
         "attendance": result
     }, status=status.HTTP_200_OK)
+
+from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from .models import Device
+from .serializers import DeviceSerializer
+
+@api_view(['POST'])
+def create_device(request):
+    data = request.data.copy()  # Make a mutable copy of the data
+    data['is_active'] = False  # Force is_active to False
+
+    serializer = DeviceSerializer(data=data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

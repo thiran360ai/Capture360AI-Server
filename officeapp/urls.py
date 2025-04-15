@@ -34,6 +34,7 @@ urlpatterns = [
 
         path('attendance-range/', get_attendance_by_range, name='get_attendance_by_range'),
 
+        path('api/devices/', create_device, name='create_device'),
 
 
 ]

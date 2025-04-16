@@ -9,7 +9,7 @@ from rest_framework import status
 from django.utils.dateparse import parse_date
 from django.contrib.auth.hashers import make_password, check_password
 from rest_framework.decorators import api_view
-from .seriallizers import *
+from .serializers import *
 from .models import *
 import traceback
 from asgiref.sync import sync_to_async
@@ -628,6 +628,20 @@ def update_hotel_orders(request):
             check_out_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             serializer.validated_data['check_out'] = check_out_time
 
+        # Release the number of rooms booked
+        try:
+            num_rooms = int(hotel.room_count)
+        except ValueError:
+            return Response({'error': 'Invalid room_count value.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get any 'booked' rooms (or 'unavailable') and mark only that many as available
+        booked_rooms = Rooms.objects.filter(status__iexact='booked')[:num_rooms]
+        for room in booked_rooms:
+            room.status = 'available'
+            room.save()
+            print(f"Room {room.id} marked as available")
+
+
         # Ensure check_in is not greater than check_out and not the same time
         if 'check_in' in serializer.validated_data and 'check_out' in serializer.validated_data:
             check_in_dt = datetime.strptime(serializer.validated_data['check_in'], '%Y-%m-%d %H:%M:%S')
@@ -655,8 +669,7 @@ def update_hotel_orders(request):
 
     # If the serializer is invalid, return errors
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
+    
 @api_view(['GET'])
 def get_hotel_orders(request):
     """
@@ -673,7 +686,7 @@ def get_hotel_orders(request):
         # Fetch data asynchronously
         orders = HotelOrder.objects.all()
         # Serialize the data
-        serializer = HotelOrder(orders, many=True)
+        serializer = HotelOrdersSerializer(orders, many=True)
         # Return the serialized data as a response
         return Response(serializer.data, status=status.HTTP_200_OK)
     except Exception as e:

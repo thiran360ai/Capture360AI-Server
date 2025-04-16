@@ -189,6 +189,7 @@ def manage_categories(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+
 @api_view(['GET', 'POST'])
 @permission_classes([AllowAny])  # 🔓 Anyone can access
 def manage_subcategories(request):
@@ -211,13 +212,6 @@ def manage_subcategories(request):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from .models import Profile
-from .serializers import ProfileSerializer
 
 @api_view(['GET', 'POST'])
 @permission_classes([AllowAny])  # Allow anyone to GET; POST will be restricted in code
@@ -362,7 +356,6 @@ def delete_product_image(request, image_id):
 
     image.delete()
     return Response({"message": "Image deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
-
 
 
 @api_view(['GET', 'POST'])

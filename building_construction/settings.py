@@ -39,7 +39,7 @@ SECRET_KEY = 'django-insecure-qy99_@e#dcu^cbt$=dazit$_*)5yz*)f_6cmkpxu9r-a9)iq90
 DEBUG = True
 
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1','api.capture360.ai', '192.168.1.55','192.168.1.36','59.97.51.97','192.168.1.33','3379-59-97-51-97.ngrok-free.app','capture360.ai','www.capture360.9ai','192.168.1.37','f158-2401-4900-9269-fea8-f59e-45e7-eb42-7a6c.ngrok-free.app','localhost:5173']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1','api.capture360.ai', '192.168.1.55','192.168.1.36','59.97.51.97','192.168.1.33','3379-59-97-51-97.ngrok-free.app','capture360.ai','www.capture360.9ai','192.168.1.37','f158-2401-4900-9269-fea8-f59e-45e7-eb42-7a6c.ngrok-free.app','localhost:5173','1df7-2409-40f4-204e-df45-2595-c282-9df8-4a09.ngrok-free.app']
 
 
 CORS_ALLOW_HEADERS = [
@@ -60,7 +60,7 @@ CORS_ALLOW_HEADERS = [
 
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
-   'https://3379-59-97-51-97.ngrok-free.app',
+    'https://1df7-2409-40f4-204e-df45-2595-c282-9df8-4a09.ngrok-free.app',
     'http://localhost:5173',
     'http://192.168.1.33:8080',
     'https://api.capture360.ai',
@@ -193,11 +193,11 @@ DEFAULT_FROM_EMAIL = "manikvasu2000@gmail.com"
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
-}
+# REST_FRAMEWORK = {
+#     'DEFAULT_AUTHENTICATION_CLASSES': (
+#         'rest_framework_simplejwt.authentication.JWTAuthentication',
+#     ),
+# }
 # AUTH_PASSWORD_VALIDATORS = [
 #     {
 #         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',

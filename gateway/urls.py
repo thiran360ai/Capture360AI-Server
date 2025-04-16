@@ -10,4 +10,11 @@ urlpatterns = [
     path("get_device_data/",get_devices),
     path('gps/device/', get_device_gps_data),
     path('gps/user/<int:user_id>', get_user_gps_data),
+    
+    path('post-gps-data/', post_gps_data, name='post-gps-data'),
+
+    path('update-gps/', update_gps_data, name='update-gps'),
+    path('get-filtered-gps-data/', get_filtered_gps_data, name='get-filtered-gps-data'),
+    path('api/devices/user/<int:user_id>/', devices_by_user, name='devices_by_user'),
+
 ]

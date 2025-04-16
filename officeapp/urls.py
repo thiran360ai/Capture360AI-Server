@@ -32,6 +32,9 @@ urlpatterns = [
         
         path('attendance/organization/daily/', organization_daily_attendance, name='organization_daily_attendance'),
 
+        path('attendance-range/', get_attendance_by_range, name='get_attendance_by_range'),
+
+        path('api/devices/', create_device, name='create_device'),
 
 
 ]

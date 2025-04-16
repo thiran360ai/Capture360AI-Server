@@ -686,7 +686,7 @@ def get_hotel_orders(request):
         # Fetch data asynchronously
         orders = HotelOrder.objects.all()
         # Serialize the data
-        serializer = HotelOrder(orders, many=True)
+        serializer = HotelOrdersSerializer(orders, many=True)
         # Return the serialized data as a response
         return Response(serializer.data, status=status.HTTP_200_OK)
     except Exception as e:

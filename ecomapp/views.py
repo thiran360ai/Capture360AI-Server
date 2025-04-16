@@ -188,28 +188,6 @@ def manage_categories(request):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# @api_view(['GET', 'POST'])
-# @permission_classes([AllowAny])  # 🔓 Anyone can access
-# def manage_subcategories(request):
-#     if request.method == 'GET':
-#         category_id = request.query_params.get('category_id')
-#         subcategories = Subcategory.objects.filter(category_id=category_id) if category_id else Subcategory.objects.all()
-#         serializer = SubcategorySerializer(subcategories, many=True)
-#         return Response(serializer.data, status=status.HTTP_200_OK)
-
-#     elif request.method == 'POST':
-#         data = request.data
-
-#         # If a single subcategory object is passed, wrap it in a list
-#         if isinstance(data, dict):
-#             data = [data]
-
-#         serializer = SubcategorySerializer(data=data, many=True)
-#         if serializer.is_valid():
-#             serializer.save()
-#             return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET', 'POST'])
@@ -236,32 +214,71 @@ def manage_subcategories(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET', 'POST'])
-@permission_classes([AllowAny])  # ✅ Customers can GET without authentication
+@permission_classes([AllowAny])  # Allow anyone to GET; POST will be restricted in code
 def profile_list_create(request):
-    # ✅ Allow GET for everyone (Customers & Shopkeepers)
     if request.method == 'GET':
+        # Allow any user to view the list of profiles
         profiles = Profile.objects.all()
         serializer = ProfileSerializer(profiles, many=True)
         return Response(serializer.data)
 
-    # ✅ Authentication required for POST
-    if not request.user.is_authenticated:
-        return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def profile_create(request):
+    if request.method == 'POST':
+        # Ensure the email is provided in the request data
+        email = request.data.get("email")
+        
+        if not email:
+            return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-    # ✅ Only shopkeepers can POST
-    if not hasattr(request.user, 'role') or request.user.role.lower() != "shopkeeper":
-        return Response({"error": "Only shopkeepers can create profiles"}, status=status.HTTP_403_FORBIDDEN)
+        try:
+            # Try to retrieve the Customer instance based on the provided email
+            user = Customer.objects.get(email=email)
+        except Customer.DoesNotExist:
+            return Response({"error": "Customer not found with the provided email"}, status=status.HTTP_404_NOT_FOUND)
 
-    # ✅ Automatically set `employee` as `request.user`
-    data = request.data.copy()
-    data['employee'] = request.user.id  # Assign logged-in shopkeeper
+        # Ensure the user has a role attribute and it is 'shopkeeper'
+        if not hasattr(user, 'role') or user.role != 'shopkeeper':
+            return Response({"error": "Only shopkeepers can create profiles"}, status=status.HTTP_403_FORBIDDEN)
 
-    serializer = ProfileSerializer(data=data)
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        # Create a profile for the authenticated shopkeeper
+        data = request.data.copy()  # Make a copy of the incoming request data
+        serializer = ProfileSerializer(data=data, context={'request': request})
+        
+        if serializer.is_valid():
+            # Save the profile and associate the shopkeeper as the employee
+            serializer.save(employee=user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# @api_view(['GET', 'POST'])
+# @permission_classes([AllowAny])  # Allow anyone to GET; POST will be restricted in code
+# def profile_list_create(request):
+#     if request.method == 'GET':
+#         profiles = Profile.objects.all()
+#         serializer = ProfileSerializer(profiles, many=True)
+#         return Response(serializer.data)
+
+#     if not request.user.is_authenticated:
+#         return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
+
+#     if not hasattr(request.user, 'role') or request.user.role != 'shopkeeper':
+#         return Response({"error": "Only shopkeepers can create profiles"}, status=status.HTTP_403_FORBIDDEN)
+
+#     data = request.data.copy()
+
+#     # Don't manually set employee ID, use request.user directly
+#     serializer = ProfileSerializer(data=data, context={'request': request})
+#     if serializer.is_valid():
+#         serializer.save(employee=request.user)
+#         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+#     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 @api_view(['PUT', 'DELETE'])
 @permission_classes([IsAuthenticated])  # ✅ Only authenticated users can modify/delete
@@ -286,30 +303,6 @@ def profile_detail(request, pk):
         profile.delete()
         return Response({"message": "Profile deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
 
-
-# api_view(['POST'])
-# @permission_classes([IsAuthenticated])  # Ensures only authenticated users can upload
-# def upload_product_images(request, product_id):
-#     """Allows uploading multiple images for a product."""
-#     try:
-#         product = Product.objects.get(id=product_id)
-#     except Product.DoesNotExist:
-#         return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
-
-#     # Get multiple images from the request
-#     images = request.FILES.getlist('images')  # Expecting a list of images
-
-#     if not images:
-#         return Response({"error": "No images uploaded"}, status=status.HTTP_400_BAD_REQUEST)
-
-#     # Save each image
-#     image_instances = []
-#     for image in images:
-#         image_instance = ProductImage.objects.create(product=product, image=image)
-#         image_instances.append(image_instance)
-
-#     serializer = ProductImageSerializer(image_instances, many=True)
-#     return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])  # Allow only logged-in users
@@ -365,44 +358,6 @@ def delete_product_image(request, image_id):
     return Response({"message": "Image deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
 
 
-
-# @api_view(['GET', 'POST'])
-# @permission_classes([IsAuthenticated])
-# @permission_classes([AllowAny])  # ✅ Customers can GET without authentication
-
-# def product_list_create(request):
-#     print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}, Role: {getattr(request.user, 'role', None)}")
-
-#     # ✅ GET: Public Access (Customers & Shopkeepers)
-#     if request.method == 'GET':
-#         products = Product.objects.all()
-#         serializer = ProductSerializer(products, many=True)
-#         return Response(serializer.data, status=status.HTTP_200_OK)
-
-#     # ✅ POST: Only Shopkeepers can add products
-#     if request.method == 'POST':
-#         if not request.user.is_authenticated:
-#             return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
-
-#         user_role = getattr(request.user, 'role', "").lower()
-#         if user_role != "shopkeeper":
-#             return Response({"error": "Only shopkeepers can add products"}, status=status.HTTP_403_FORBIDDEN)
-
-#         # ✅ Fetch the correct shop profile using `email` or another unique field
-#         try:
-#             shop_profile = Profile.objects.get(email=request.user.email)  # Adjust field if necessary
-#         except Profile.DoesNotExist:
-#             return Response({"error": "Shop profile not found"}, status=status.HTTP_400_BAD_REQUEST)
-
-#         # ✅ Save product with correct shop
-#         serializer = ProductSerializer(data=request.data)
-#         if serializer.is_valid():
-#             serializer.save(shop=shop_profile)
-#             return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
 @api_view(['GET', 'POST'])
 @permission_classes([AllowAny])  # ✅ Allows anyone (even anonymous users)
 def product_list_create(request):
@@ -415,8 +370,11 @@ def product_list_create(request):
         serializer = ProductSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()  # ✅ No user or profile linking required
+            serializer.save()  # ✅ No user or profile linking required
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
     
 
 
@@ -449,13 +407,11 @@ def product_detail(request, pk):
     if request.method == 'DELETE':
         product.delete()
         return Response({"message": "Product deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
-    
+
 
 @api_view(['GET', 'POST'])
-@permission_classes([AllowAny])  # ✅ Correct position
+@permission_classes([AllowAny])
 def product_variation_list_create(request, product_id):
-    print(f"User: {request.user}, Authenticated: {request.user.is_authenticated}, Role: {getattr(request.user, 'role', None)}")
-
     try:
         product = Product.objects.get(id=product_id)
     except Product.DoesNotExist:
@@ -467,27 +423,14 @@ def product_variation_list_create(request, product_id):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     if request.method == 'POST':
-        if not request.user.is_authenticated:
-            return Response({"error": "Authentication required"}, status=status.HTTP_401_UNAUTHORIZED)
-
-        user_role = getattr(request.user, 'role', "").lower()
-        if user_role != "shopkeeper":
-            return Response({"error": "Only shopkeepers can add product variations"}, status=status.HTTP_403_FORBIDDEN)
-
-        try:
-            shop_profile = Profile.objects.get(email=request.user.email)
-        except Profile.DoesNotExist:
-            return Response({"error": "Shop profile not found"}, status=status.HTTP_400_BAD_REQUEST)
-
-        if product.shop != shop_profile:
-            return Response({"error": "You can only add variations to your own products"}, status=status.HTTP_403_FORBIDDEN)
-
+        # 🔥 Pass `product` in the context
         serializer = ProductVariationSerializer(data=request.data, context={'product': product})
         if serializer.is_valid():
-            serializer.save()
+            serializer.save()  # product is assigned in serializer.create()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 from django.shortcuts import render
 from django.http import JsonResponse
@@ -536,39 +479,45 @@ def search_product(request):
 
 
 
-# ✅ Get or Create Cart for Logged-in User
+
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
 def get_cart(request):
-    cart, created = Cart.objects.get_or_create(user=request.user)
-    serializer = CartSerializer(cart)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    cart = request.session.get('cart', {})
 
-# ✅ Add Item to Cart
+    cart_items = []
+    for variation_id, quantity in cart.items():
+        try:
+            variation = ProductVariation.objects.get(id=variation_id)
+            item_data = ProductVariationSerializer(variation).data
+            item_data['quantity'] = quantity
+            cart_items.append(item_data)
+        except ProductVariation.DoesNotExist:
+            continue  # Skip invalid items
+
+    return Response({"cart": cart_items}, status=status.HTTP_200_OK)
+
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
 def add_to_cart(request):
-    user = request.user
-    cart, created = Cart.objects.get_or_create(user=user)
+    cart = request.session.get('cart', {})
 
-    product_variation_id = request.data.get("product_variation")
-    quantity = request.data.get("quantity", 1)
+    product_variation_id = str(request.data.get("product_variation"))
+    quantity = int(request.data.get("quantity", 1))
 
     try:
         product_variation = ProductVariation.objects.get(id=product_variation_id)
     except ProductVariation.DoesNotExist:
         return Response({"error": "Invalid product variation"}, status=status.HTTP_400_BAD_REQUEST)
 
-    cart_item, created = CartItem.objects.get_or_create(cart=cart, product_variation=product_variation)
-    
-    if not created:
-        cart_item.quantity += int(quantity)
+    if product_variation_id in cart:
+        cart[product_variation_id] += quantity
     else:
-        cart_item.quantity = int(quantity)
-    
-    cart_item.save()
+        cart[product_variation_id] = quantity
+
+    request.session['cart'] = cart  # Save cart back to session
 
     return Response({"message": "Item added to cart successfully"}, status=status.HTTP_201_CREATED)
+
+
 
 # ✅ Remove Item from Cart
 @api_view(['DELETE'])
@@ -591,44 +540,9 @@ def clear_cart(request):
         return Response({"message": "Cart cleared"}, status=status.HTTP_200_OK)
     return Response({"error": "No cart found"}, status=status.HTTP_404_NOT_FOUND)
 
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework import status
-from django.utils.timezone import now
-from .models import Cart, CartItem, Order, OrderItem, ProductVariation
-from .serializers import CartSerializer, OrderSerializer
+
 import threading
 import time
-
-# # 📌 ADD TO CART
-# @api_view(['POST'])
-# @permission_classes([IsAuthenticated])
-# def add_to_cart(request):
-#     user = request.user
-#     cart, created = Cart.objects.get_or_create(user=user)
-
-#     product_variation_id = request.data.get("product_variation")
-#     quantity = request.data.get("quantity", 1)
-
-#     try:
-#         product_variation = ProductVariation.objects.get(id=product_variation_id)
-#     except ProductVariation.DoesNotExist:
-#         return Response({"error": "Invalid product variation"}, status=status.HTTP_400_BAD_REQUEST)
-
-#     cart_item, created = CartItem.objects.get_or_create(cart=cart, product_variation=product_variation)
-    
-#     if not created:
-#         cart_item.quantity += int(quantity)
-#     else:
-#         cart_item.quantity = int(quantity)
-    
-#     cart_item.save()
-
-#     return Response({"message": "Item added to cart successfully"}, status=status.HTTP_201_CREATED)
-
-
-
 
 # 📌 ORDER FROM CART
 @api_view(['POST'])
@@ -667,49 +581,110 @@ def order_from_cart(request):
 
 
 from django.db import transaction
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def place_order_direct(request):
-    user = request.user
+# @api_view(['POST'])
+# # @permission_classes([IsAuthenticated])
+# def place_order_direct(request):
+#     user = request.user
 
+#     order_items = request.data.get('items', [])
+#     address = request.data.get('address')         # 🔥 extra
+#     pincode = request.data.get('pincode')         # 🔥 extra
+#     latitude = request.data.get('latitude')       # 🔥 extra
+#     longitude = request.data.get('longitude')     # 🔥 extra
+
+#     if not order_items:
+#         return Response({"error": "No items provided"}, status=status.HTTP_400_BAD_REQUEST)
+
+#     # 💡 You can print, log or process these here
+#     print("Received Address:", address)
+#     print("Pincode:", pincode)
+#     print("Lat/Long:", latitude, longitude)
+
+#     total_price = 0
+#     order = Order.objects.create(user=user, total_price=0, status='pending')  # no model change
+
+#     for item in order_items:
+#         try:
+#             product_variation = ProductVariation.objects.get(id=item['product_variation'])
+#             quantity = int(item['quantity'])
+#             price = product_variation.price * quantity
+
+#             OrderItem.objects.create(
+#                 order=order,
+#                 product_variation=product_variation,
+#                 quantity=quantity,
+#                 price=price
+#             )
+#             total_price += price
+#         except ProductVariation.DoesNotExist:
+#             return Response(
+#                 {"error": f"Invalid product variation ID: {item['product_variation']}"},
+#                 status=status.HTTP_400_BAD_REQUEST
+#             )
+
+#     order.total_price = total_price
+#     order.save()
+
+#     return Response({
+#         "message": "Order placed successfully (address received but not saved)",
+#         "order_id": order.id,
+#         "total_price": str(order.total_price),
+#         "address": address,
+#         "pincode": pincode,
+#         "latitude": latitude,
+#         "longitude": longitude
+#     }, status=status.HTTP_201_CREATED)
+@api_view(['POST'])
+def place_order_direct(request):
+    user_id = request.data.get('user_id')
     order_items = request.data.get('items', [])
-    address = request.data.get('address')         # 🔥 extra
-    pincode = request.data.get('pincode')         # 🔥 extra
-    latitude = request.data.get('latitude')       # 🔥 extra
-    longitude = request.data.get('longitude')     # 🔥 extra
+    address = request.data.get('address')
+    pincode = request.data.get('pincode')
+    latitude = request.data.get('latitude')
+    longitude = request.data.get('longitude')
+
+    if not user_id:
+        return Response({"error": "user_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        user = Customer.objects.get(id=user_id)
+    except Customer.DoesNotExist:
+        return Response({"error": "Invalid user_id"}, status=status.HTTP_400_BAD_REQUEST)
 
     if not order_items:
         return Response({"error": "No items provided"}, status=status.HTTP_400_BAD_REQUEST)
 
-    # 💡 You can print, log or process these here
     print("Received Address:", address)
     print("Pincode:", pincode)
     print("Lat/Long:", latitude, longitude)
 
     total_price = 0
-    order = Order.objects.create(user=user, total_price=0, status='pending')  # no model change
 
-    for item in order_items:
-        try:
-            product_variation = ProductVariation.objects.get(id=item['product_variation'])
-            quantity = int(item['quantity'])
-            price = product_variation.price * quantity
+    with transaction.atomic():
+        order = Order.objects.create(user=user, total_price=0, status='pending')
 
-            OrderItem.objects.create(
-                order=order,
-                product_variation=product_variation,
-                quantity=quantity,
-                price=price
-            )
-            total_price += price
-        except ProductVariation.DoesNotExist:
-            return Response(
-                {"error": f"Invalid product variation ID: {item['product_variation']}"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        for item in order_items:
+            try:
+                product_variation = ProductVariation.objects.get(id=item['product_variation'])
+                quantity = int(item['quantity'])
+                price = product_variation.price * quantity
 
-    order.total_price = total_price
-    order.save()
+                OrderItem.objects.create(
+                    order=order,
+                    product_variation=product_variation,
+                    quantity=quantity,
+                    price=price
+                )
+                total_price += price
+            except ProductVariation.DoesNotExist:
+                transaction.set_rollback(True)
+                return Response(
+                    {"error": f"Invalid product variation ID: {item['product_variation']}"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        order.total_price = total_price
+        order.save()
 
     return Response({
         "message": "Order placed successfully (address received but not saved)",
@@ -722,14 +697,14 @@ def place_order_direct(request):
     }, status=status.HTTP_201_CREATED)
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
 def get_order_details(request, order_id):
     try:
-        order = Order.objects.get(id=order_id, user=request.user)
+        order = Order.objects.get(id=order_id)
         serializer = OrderSerializer(order)
         return Response(serializer.data, status=status.HTTP_200_OK)
     except Order.DoesNotExist:
         return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+
 
     # Start auto-forwarding check
     thread = threading.Thread(target=auto_forward_order, args=(order.id,))
@@ -774,41 +749,65 @@ def accept_order(request, order_id):
 
 # 📌 ADD PRODUCT TO WISHLIST
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
 def add_to_wishlist(request):
-    user = request.user
+    user_id = request.data.get('user_id')
     product_id = request.data.get('product_id')
 
+    if not user_id or not product_id:
+        return Response({"error": "user_id and product_id are required"}, status=status.HTTP_400_BAD_REQUEST)
+
     try:
+        user = Customer.objects.get(id=user_id)
         product = Product.objects.get(id=product_id)
-        Wishlist.objects.get_or_create(user=user, product=product)
-        return Response({"message": "Product added to wishlist"}, status=status.HTTP_201_CREATED)
+    except Customer.DoesNotExist:
+        return Response({"error": "Invalid user ID"}, status=status.HTTP_400_BAD_REQUEST)
     except Product.DoesNotExist:
         return Response({"error": "Invalid product ID"}, status=status.HTTP_400_BAD_REQUEST)
 
+    Wishlist.objects.get_or_create(user=user, product=product)
+    return Response({"message": "Product added to wishlist"}, status=status.HTTP_201_CREATED)
 
-# 📌 GET USER WISHLIST
+
+# # 📌 GET USER WISHLIST
+# @api_view(['GET'])
+# def get_wishlist(request):
+#     wishlist = request.session.get('wishlist', [])
+#     products = Product.objects.filter(id__in=wishlist)
+#     serializer = ProductSerializer(products, many=True)
+#     return Response(serializer.data)
+
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
 def get_wishlist(request):
-    user = request.user
-    wishlist = Wishlist.objects.filter(user=user)
-    serializer = WishlistSerializer(wishlist, many=True)
-    return Response(serializer.data)
+    user_id = request.query_params.get('user_id')
+
+    if not user_id:
+        return Response({"error": "user_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        user_id = int(user_id.strip('/'))  # ✅ Strip trailing slash and convert to int
+        user = Customer.objects.get(id=user_id)
+    except (ValueError, Customer.DoesNotExist):
+        return Response({"error": "Invalid user ID"}, status=status.HTTP_400_BAD_REQUEST)
+
+    wishlist_items = Wishlist.objects.filter(user=user)
+    products = [item.product for item in wishlist_items]
+    serializer = ProductSerializer(products, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 
 
 # 📌 REMOVE PRODUCT FROM WISHLIST
 @api_view(['DELETE'])
-@permission_classes([IsAuthenticated])
 def remove_from_wishlist(request, product_id):
-    user = request.user
-    wishlist_item = Wishlist.objects.filter(user=user, product_id=product_id).first()
+    wishlist = request.session.get('wishlist', [])
 
-    if not wishlist_item:
-        return Response({"error": "Product not in wishlist"}, status=status.HTTP_400_BAD_REQUEST)
+    if str(product_id) in wishlist:
+        wishlist.remove(str(product_id))
+        request.session['wishlist'] = wishlist
+        return Response({"message": "Product removed from wishlist"}, status=status.HTTP_200_OK)
 
-    wishlist_item.delete()
-    return Response({"message": "Product removed from wishlist"}, status=status.HTTP_200_OK)
+    return Response({"error": "Product not in wishlist"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 # 📌 ADD REVIEW
@@ -866,51 +865,107 @@ def delete_review(request, review_id):
 
 
 # 📌 ADD ADDRESS
+# @api_view(['POST'])
+# @permission_classes([IsAuthenticated])
+# def add_address(request):
+#     serializer = AddressSerializer(data=request.data)
+#     if serializer.is_valid():
+#         serializer.save(user=request.user)
+#         return Response(serializer.data, status=status.HTTP_201_CREATED)
+#     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# # 📌 GET USER ADDRESSES
+# @api_view(['GET'])
+# @permission_classes([IsAuthenticated])
+# def get_addresses(request):
+#     addresses = Address.objects.filter(user=request.user)
+#     serializer = AddressSerializer(addresses, many=True)
+#     return Response(serializer.data)
+
+
+# # 📌 UPDATE ADDRESS
+# @api_view(['PUT'])
+# @permission_classes([IsAuthenticated])
+# def update_address(request, address_id):
+#     try:
+#         address = Address.objects.get(id=address_id, user=request.user)
+#         serializer = AddressSerializer(address, data=request.data, partial=True)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response(serializer.data, status=status.HTTP_200_OK)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#     except Address.DoesNotExist:
+#         return Response({"error": "Address not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+# # 📌 DELETE ADDRESS
+# @api_view(['DELETE'])
+# @permission_classes([IsAuthenticated])
+# def delete_address(request, address_id):
+#     try:
+#         address = Address.objects.get(id=address_id, user=request.user)
+#         address.delete()
+#         return Response({"message": "Address deleted successfully"}, status=status.HTTP_200_OK)
+#     except Address.DoesNotExist:
+#         return Response({"error": "Address not found"}, status=status.HTTP_404_NOT_FOUND)
+# 📌 ADD ADDRESS (no auth)
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
 def add_address(request):
+    user_id = request.data.get('user_id')
+    try:
+        user = Customer.objects.get(id=user_id)
+    except Customer.DoesNotExist:
+        return Response({"error": "Invalid user_id"}, status=status.HTTP_400_BAD_REQUEST)
+
     serializer = AddressSerializer(data=request.data)
     if serializer.is_valid():
-        serializer.save(user=request.user)
+        serializer.save(user=user)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# 📌 GET USER ADDRESSES
+# 📌 GET USER ADDRESSES (no auth)
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_addresses(request):
-    addresses = Address.objects.filter(user=request.user)
+def get_addresses(request, user_id):
+    try:
+        user = Customer.objects.get(id=user_id)
+    except Customer.DoesNotExist:
+        return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    addresses = Address.objects.filter(user=user)
     serializer = AddressSerializer(addresses, many=True)
     return Response(serializer.data)
 
 
-# 📌 UPDATE ADDRESS
+# 📌 UPDATE ADDRESS (no auth)
 @api_view(['PUT'])
-@permission_classes([IsAuthenticated])
 def update_address(request, address_id):
+    user_id = request.data.get('user_id')
     try:
-        address = Address.objects.get(id=address_id, user=request.user)
-        serializer = AddressSerializer(address, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    except Address.DoesNotExist:
-        return Response({"error": "Address not found"}, status=status.HTTP_404_NOT_FOUND)
+        user = Customer.objects.get(id=user_id)
+        address = Address.objects.get(id=address_id, user=user)
+    except (Customer.DoesNotExist, Address.DoesNotExist):
+        return Response({"error": "Address not found or invalid user"}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = AddressSerializer(address, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# 📌 DELETE ADDRESS
+# 📌 DELETE ADDRESS (no auth)
 @api_view(['DELETE'])
-@permission_classes([IsAuthenticated])
 def delete_address(request, address_id):
+    user_id = request.data.get('user_id')
     try:
-        address = Address.objects.get(id=address_id, user=request.user)
+        user = Customer.objects.get(id=user_id)
+        address = Address.objects.get(id=address_id, user=user)
         address.delete()
         return Response({"message": "Address deleted successfully"}, status=status.HTTP_200_OK)
-    except Address.DoesNotExist:
-        return Response({"error": "Address not found"}, status=status.HTTP_404_NOT_FOUND)
-
+    except (Customer.DoesNotExist, Address.DoesNotExist):
+        return Response({"error": "Address not found or invalid user"}, status=status.HTTP_404_NOT_FOUND)
 
 # 📌 CREATE PAYMENT
 @api_view(['POST'])
@@ -955,7 +1010,7 @@ def delete_payment(request, payment_id):
         return Response({"message": "Payment deleted successfully"}, status=status.HTTP_200_OK)
     except Payment.DoesNotExist:
         return Response({"error": "Payment not found"}, status=status.HTTP_404_NOT_FOUND)
-    
+   
 
 # 📌 ADD DELIVERY PARTNER
 @api_view(['POST'])

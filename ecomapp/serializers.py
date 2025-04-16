@@ -69,12 +69,39 @@ class BannerSerializer(serializers.ModelSerializer):
 #         model = Subcategory
 #         fields = ["id", "name", "category_id", "category", "image"]
 
+# class SubcategorySerializer(serializers.ModelSerializer):
+#     category = serializers.CharField(source='category.name', read_only=True)
+
+#     class Meta:
+#         model = Subcategory
+#         fields = ["id", "name", "category", "image"]
+
+
+# class SubcategorySerializer(serializers.ModelSerializer):
+#     category_id = serializers.IntegerField(write_only=True)
+#     category = serializers.CharField(source='category.name', read_only=True)
+    
+
+#     class Meta:
+#         model = Subcategory
+#         fields = ["id", "name", "category_id", "category", "image"]
+
 class SubcategorySerializer(serializers.ModelSerializer):
+    category_id = serializers.IntegerField(write_only=True)
     category_id = serializers.IntegerField(write_only=True)
     category = serializers.CharField(source='category.name', read_only=True)
 
     class Meta:
         model = Subcategory
+        fields = ["id", "name", "category_id", "category", "image"]
+
+    def create(self, validated_data):
+        # Pull category_id and replace it with the actual category object
+        category_id = validated_data.pop('category_id')
+        category = Category.objects.get(id=category_id)
+        return Subcategory.objects.create(category=category, **validated_data)
+
+
         fields = ["id", "name", "category_id", "category", "image"]
 
     def create(self, validated_data):

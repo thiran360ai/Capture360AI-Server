@@ -11,14 +11,19 @@ urlpatterns = [
     path('categories/', manage_categories, name='manage_categories'),
     path('subcategories/', manage_subcategories, name='manage_subcategories'),
     path('profiles/', profile_list_create, name='shopkeeper-list-create'),
+    path('profiles/create/',profile_create),
     # path('profiles/<int:pk>/', profile_detail, name='shopkeeper-detail'),
 
     #Products APIs
     path('products/<int:product_id>/upload-images/', upload_product_images, name='upload_product_images'),
     path('products/<int:product_id>/images/', get_product_images, name='get_product_images'),
-    # path('products/images/<int:image_id>/delete/', delete_product_image, name='delete_product_image'),
+    path('products/images/<int:image_id>/delete/', delete_product_image, name='delete_product_image'),
     path('products/', product_list_create, name='product-list-create'),
+
+
+    # path('products/<int:product_id>/variations/', product_variation_create, name='product-list-create'),
     path('products/<int:pk>/', product_detail, name='product-detail'),
+
     path('products/<int:product_id>/variations/', product_variation_list_create, name='product-variation-list-create'),
     path('search-product/', search_product, name='search-product'),
 

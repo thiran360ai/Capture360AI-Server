@@ -93,50 +93,52 @@ class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = '__all__'
+        read_only_fields = ['employee']  # Ensure employee can't be overwritten from client
 
-# class ProductSerializer(serializers.ModelSerializer):
-#     category = serializers.CharField(source='category.name', read_only=True)
-#     subcategory = serializers.CharField(source='subcategory.name', read_only=True)
-#     shop = serializers.CharField(source='shop.shop_name', read_only=True)  # <-- corrected here
-
-#     class Meta:
-#         model = Product
-#         fields = [
-#             "id", "name", "brand", "description", "warranty", "return_policy",
-#             "is_active", "created_at", "updated_at",
-#             "shop",  # will now show the correct shop name
-#             "category", "subcategory"
-#         ]
 class ProductSerializer(serializers.ModelSerializer):
     category = serializers.CharField(source='category.name', read_only=True)
     subcategory = serializers.CharField(source='subcategory.name', read_only=True)
     shop_name = serializers.CharField(source='shop.shop_name', read_only=True)  # Display only
-    shop_id = serializers.PrimaryKeyRelatedField(source='shop', queryset=Profile.objects.all(), write_only=True)  # 👈 Accept shop_id during POST
+    shop_id = serializers.PrimaryKeyRelatedField(
+        source='shop', 
+        queryset=Profile.objects.all(), 
+        write_only=True  # Accept shop_id during POST
+    )  
 
     class Meta:
         model = Product
         fields = [
             "id", "name", "brand", "description", "warranty", "return_policy",
             "is_active", "created_at", "updated_at",
-            "shop_id",      # 👈 Required for POST
-            "shop_name",    # 👈 Used in GET
+            "shop_id",      # Required for POST
+            "shop_name",    # Used in GET
             "category", "subcategory"
         ]
+    
+    def validate_shop_id(self, value):
+        # Check if the shop ID corresponds to a valid Profile
+        try:
+            profile = Profile.objects.get(id=value.id)
+            # Optionally, you can check if the shop is active or some other business logic
+        except Profile.DoesNotExist:
+            raise serializers.ValidationError("Invalid shop ID provided")
+        return value
 
 
 class ProductVariationSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source='product.name', read_only=True)
+
     class Meta:
         model = ProductVariation
-        fields = '__all__'
+        fields = ['id', 'variation_type', 'value', 'price', 'offer_price', 'stock', 'product', 'product_name']
         extra_kwargs = {
-            'product': {'required': False},  # 🚀 Product auto-assigned
+            'product': {'required': False},  # Auto-assigned
         }
 
     def create(self, validated_data):
-        # ✅ Automatically set the product
         product = self.context['product']
         validated_data['product'] = product
-        return super().create(validated_data)  # ✅ Remove `shop`
+        return super().create(validated_data)
 
 
 class ProductImageSerializer(serializers.ModelSerializer):

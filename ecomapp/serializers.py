@@ -122,23 +122,29 @@ class ProfileSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ['employee']  # Ensure employee can't be overwritten from client
 
+
 class ProductSerializer(serializers.ModelSerializer):
     category = serializers.CharField(source='category.name', read_only=True)
     subcategory = serializers.CharField(source='subcategory.name', read_only=True)
     shop_name = serializers.CharField(source='shop.shop_name', read_only=True)  # Display only
+
     shop_id = serializers.PrimaryKeyRelatedField(
         source='shop', 
         queryset=Profile.objects.all(), 
         write_only=True  # Accept shop_id during POST
     )  
 
+  
+
     class Meta:
         model = Product
         fields = [
             "id", "name", "brand", "description", "warranty", "return_policy",
             "is_active", "created_at", "updated_at",
+
             "shop_id",      # Required for POST
             "shop_name",    # Used in GET
+
             "category", "subcategory"
         ]
     

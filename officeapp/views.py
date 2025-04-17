@@ -5,6 +5,7 @@ from rest_framework import status
 from django.contrib.auth.hashers import make_password
 from .models import Employee, Organization
 from .serializers import EmployeeSerializer
+from .serializers import *
 
 # USER CREATION FUNCTION (POST)
 @api_view(['POST'])
@@ -1520,3 +1521,30 @@ class RegisterDeviceView(View):
             return JsonResponse({"error": "Invalid JSON"}, status=400)
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
+
+
+@api_view(['POST'])
+def attendance_by_organization_key_and_date(request):
+    org_key = request.data.get('org_key')
+    start_date = request.data.get('start_date')
+    end_date = request.data.get('end_date')
+
+    if not org_key or not start_date or not end_date:
+        return Response({'error': 'org_key, start_date, and end_date are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        organization = Organization.objects.get(key=org_key)
+    except Organization.DoesNotExist:
+        return Response({'error': 'Organization not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    try:
+        start = datetime.strptime(start_date, '%Y-%m-%d').date()
+        end = datetime.strptime(end_date, '%Y-%m-%d').date()
+    except ValueError:
+        return Response({'error': 'Invalid date format. Use YYYY-MM-DD'}, status=status.HTTP_400_BAD_REQUEST)
+
+    employees = organization.employees.all()
+    attendances = Attendance.objects.filter(employee__in=employees, date__range=(start, end))
+
+    serializer = AttendanceSerializer(attendances, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)

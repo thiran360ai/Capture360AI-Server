@@ -2,7 +2,7 @@ from django.urls import path
 from django.contrib import admin
 from .views import *
 from .views import  CreateEmployeeView
-from . import views
+from . import views 
 
 urlpatterns = [
         path('create-user/', create_user, name='create_user'),
@@ -39,5 +39,7 @@ urlpatterns = [
         path('register/device/', RegisterDeviceView.as_view(), name='device-detail'),
         
         path('attendance/by-org-key/', attendance_by_organization_key_and_date, name='attendance_by_org_key'),
+        
+        path('attendance/summary/', attendance_summary_by_org_and_date, name='attendance_summary'),
 
 ]

@@ -1548,3 +1548,51 @@ def attendance_by_organization_key_and_date(request):
 
     serializer = AttendanceSerializer(attendances, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+from django.db.models import Sum
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from datetime import datetime
+from .models import Attendance, Organization
+from .serializers import AttendanceSerializer
+
+@api_view(['POST'])
+def attendance_summary_by_org_and_date(request):
+    org_key = request.data.get('org_key')
+    start_date = request.data.get('start_date')
+    end_date = request.data.get('end_date')
+
+    if not org_key or not start_date or not end_date:
+        return Response({'error': 'org_key, start_date, and end_date are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        organization = Organization.objects.get(key=org_key)
+    except Organization.DoesNotExist:
+        return Response({'error': 'Organization not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    try:
+        start = datetime.strptime(start_date, '%Y-%m-%d').date()
+        end = datetime.strptime(end_date, '%Y-%m-%d').date()
+    except ValueError:
+        return Response({'error': 'Invalid date format. Use YYYY-MM-DD'}, status=status.HTTP_400_BAD_REQUEST)
+
+    employees = organization.employees.all()
+
+    summary_data = []
+
+    for employee in employees:
+        total = Attendance.objects.filter(
+            employee=employee,
+            date__range=(start, end)
+        ).aggregate(total_hours=Sum('total_hours'))
+
+        summary_data.append({
+            'employee_id': employee.id,
+            'employee_name': employee.name,
+            'employee_email': employee.email,
+            'total_hours': total['total_hours'] or 0
+        })
+
+    return Response(summary_data, status=status.HTTP_200_OK)

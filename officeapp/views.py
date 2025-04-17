@@ -1589,7 +1589,8 @@ def attendance_summary_by_org_and_date(request):
         ).aggregate(total_hours=Sum('total_hours'))
 
         summary_data.append({
-            'employee_id': employee.id,
+            'employee_id': employee.employee_id,
+            
             'employee_name': employee.name,
             'employee_email': employee.email,
             'total_hours': total['total_hours'] or 0

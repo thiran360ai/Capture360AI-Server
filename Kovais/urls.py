@@ -51,7 +51,7 @@ urlpatterns = [
     path('hotel/update/', update_hotel_orders),
     path('filter_hotel_order_by_status/', get_hotel_order_status, name="filter hotel order by user and status"),
     path('filter_hotel_order_by_payment_status/', get_payment_status, name="filter hotel order by user and status"),
-    path('orders/', get_hotel_orders),
+    # path('orders/', get_hotel_orders),
     path('room-count/', get_room_count),
 
     # Attendance

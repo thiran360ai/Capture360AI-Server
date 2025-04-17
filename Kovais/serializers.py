@@ -26,7 +26,7 @@ class UserDetailsSerializer(serializers.ModelSerializer):
         model = UserDetails
         # fields = ['id', 'name', 'password', 'membership', 'subscribed', 'premium_amount']
         # fields = '_all_'
-        fields = ('name', 'membership', 'points', 'emblem_url','password')
+        fields = ('id','name', 'membership', 'points', 'emblem_url','password')
 
 class SaloonOrdersSerializer(serializers.ModelSerializer):
     customer_name = serializers.CharField(source="customer_id.name", read_only=True)
@@ -59,8 +59,9 @@ class SpaOrdersSerializer(serializers.ModelSerializer):
 class HotelOrdersSerializer(serializers.ModelSerializer):
     class Meta:
         model = HotelOrder
-        fields = ['id', 'customer_id', 'employee_id', 'guest_name', 'amount', 'check_in', 'check_out', 'category',
-                  'room_count', 'guest_count', 'status', 'payment_status', 'created_at']
+        fields= '__all__'
+        # fields = ['id', 'customer_id', 'employee_id', 'guest_name', 'amount', 'check_in', 'check_out', 'category',
+        #           'room_count', 'guest_count', 'status', 'payment_status', 'created_at']
         created_at = serializers.SerializerMethodField()
 
 

@@ -62,7 +62,9 @@ def login_view(request):
                 'email': user.email,
                 'role': user.role,
                 # 'organization': user.organization.name,
-                'device_id': user.device_id
+                'device_id': user.device_id,
+                'is_active': user.is_active
+                # 'employee_id': user.employee_id,
             }, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
@@ -1422,3 +1424,99 @@ def create_device(request):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# views.py
+
+from django.http import JsonResponse
+from django.views import View
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+import json
+
+
+
+# @method_decorator(csrf_exempt, name='dispatch')
+# class RegisterDeviceView(View):
+#     def post(self, request):
+#         try:
+#             data = json.loads(request.body)
+#             user_id = data.get('user_id')
+#             device_id = data.get('device_id')
+#             organization_id = data.get('organization_id')
+
+#             if not all([user_id, device_id, organization_id]):
+#                 return JsonResponse({"error": "user_id, device_id, and organization_id are required"}, status=400)
+
+#             # service = DeviceService(user_id, device_id, organization_id)
+#             user = Employee.objects.filter(id=user_id).first()
+#             if not user:
+#                 error = "User not found"
+#                 return False
+
+#             # Step 2: Check if device exists for this user
+#             device = Device.objects.filter(device_id=device_id, user=user).first()
+
+#             # Step 3: If not found, create it
+#             if not device:
+#                 device = Device.objects.create(
+#                     user=user,
+#                     device_id=device_id,
+#                     organization_id=organization_id or getattr(user, 'organization_id', None)
+#                 )
+
+#             return JsonResponse({
+#                 "message": "Device registered successfully",
+#                 "user_id": user.id,
+#                 "user_name": user.name,
+#                 "device_id": device.device_id,
+#                 "organization_id": device.organization_id
+#             }, status=200)
+
+#         except json.JSONDecodeError:
+#             return JsonResponse({"error": "Invalid JSON"}, status=400)
+#         except Exception as e:
+#             return JsonResponse({"error": str(e)}, status=500)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class RegisterDeviceView(View):
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+            user_id = data.get('user_id')
+            device_id = data.get('device_id')
+            organization_id = data.get('organization_id')
+
+            if not all([user_id, device_id, organization_id]):
+                return JsonResponse({"error": "user_id, device_id, and organization_id are required"}, status=400)
+
+            user = Employee.objects.filter(id=user_id).first()
+            if not user:
+                return JsonResponse({"error": "User not found"}, status=404)
+
+            organization = Organization.objects.filter(id=organization_id).first()
+            if not organization:
+                return JsonResponse({"error": "Organization not found"}, status=404)
+
+            device = Device.objects.filter(device_id=device_id, user=user).first()
+
+            if not device:
+                device = Device.objects.create(
+                    user=user,
+                    device_id=device_id
+                    # organization=organization
+                )
+
+            return JsonResponse({
+                "message": "Device registered successfully",
+                "user_id": user.id,
+                "user_name": user.name,
+                "device_id": device.device_id,
+                "organization_id": organization.id
+            }, status=200)
+
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON"}, status=400)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)

@@ -36,5 +36,5 @@ urlpatterns = [
 
         path('api/devices/', create_device, name='create_device'),
 
-
+        path('register/device/', RegisterDeviceView.as_view(), name='device-detail'),
 ]

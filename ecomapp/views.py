@@ -911,6 +911,7 @@ def delete_review(request, review_id):
 #         return Response({"error": "Address not found"}, status=status.HTTP_404_NOT_FOUND)
 # 📌 ADD ADDRESS (no auth)
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def add_address(request):
     user_id = request.data.get('user_id')
     try:
@@ -920,13 +921,17 @@ def add_address(request):
 
     serializer = AddressSerializer(data=request.data)
     if serializer.is_valid():
-        serializer.save(user=user)
+        serializer.save(user=user)  # ✅ set user manually here
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+
+
+
 # 📌 GET USER ADDRESSES (no auth)
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def get_addresses(request, user_id):
     try:
         user = Customer.objects.get(id=user_id)
@@ -938,8 +943,10 @@ def get_addresses(request, user_id):
     return Response(serializer.data)
 
 
+
 # 📌 UPDATE ADDRESS (no auth)
 @api_view(['PUT'])
+@permission_classes([AllowAny])
 def update_address(request, address_id):
     user_id = request.data.get('user_id')
     try:
@@ -955,8 +962,10 @@ def update_address(request, address_id):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+
 # 📌 DELETE ADDRESS (no auth)
 @api_view(['DELETE'])
+@permission_classes([AllowAny])
 def delete_address(request, address_id):
     user_id = request.data.get('user_id')
     try:
@@ -966,6 +975,7 @@ def delete_address(request, address_id):
         return Response({"message": "Address deleted successfully"}, status=status.HTTP_200_OK)
     except (Customer.DoesNotExist, Address.DoesNotExist):
         return Response({"error": "Address not found or invalid user"}, status=status.HTTP_404_NOT_FOUND)
+
 
 # 📌 CREATE PAYMENT
 @api_view(['POST'])

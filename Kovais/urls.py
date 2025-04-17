@@ -65,4 +65,6 @@ urlpatterns = [
     path('create-task/', create_task),
     path('get-all-tasks/', get_all_task),
     path('update-task/', update_task),
+
+    path('dump/',trigger_db_sync)
 ]

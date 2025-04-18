@@ -122,6 +122,7 @@ INSTALLED_APPS = [
     'Attendance',
     'officeapp',
     'gateway',
+    'HotelApp'
 ]
 
 MIDDLEWARE = [

@@ -299,7 +299,8 @@ def customer_login(request):
                 'user_id': user.id,
                 'username': user.name,
                 'aadhar': has_aadhar,
-                'emblem_url': emblem_url
+                'emblem_url': emblem_url,
+                'points':user.points
             }
 
             print(f"Response Data: {response_data}")  # Debug print
@@ -1464,4 +1465,42 @@ def trigger_db_sync(request):
 
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)})
+    
+    
+    
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from .models import Products, Order
+from .serializers import ProductSerializer, OrderSerializer
 
+# PRODUCTS VIEW
+@api_view(['GET', 'POST'])
+def products_view(request):
+    if request.method == 'GET':
+        products = Products.objects.all()
+        serializer = ProductSerializer(products, many=True)
+        return Response(serializer.data)
+
+    elif request.method == 'POST':
+        serializer = ProductSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ORDERS VIEW
+@api_view(['GET', 'POST'])
+def orders_view(request):
+    if request.method == 'GET':
+        orders = Order.objects.all()
+        serializer = OrderSerializer(orders, many=True)
+        return Response(serializer.data)
+
+    elif request.method == 'POST':
+        serializer = OrderSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()  # This will call model.save() and calculate total
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

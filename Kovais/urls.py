@@ -66,5 +66,9 @@ urlpatterns = [
     path('get-all-tasks/', get_all_task),
     path('update-task/', update_task),
 
-    path('dump/',trigger_db_sync)
+    path('dump/',trigger_db_sync),
+    
+    path('api/products/', products_view, name='products_api'),
+    
+    path('api/orders/', orders_view, name='orders_api'),
 ]

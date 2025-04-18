@@ -636,18 +636,18 @@ def update_hotel_orders(request):
             check_out_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             serializer.validated_data['check_out'] = check_out_time
 
-        # Release the number of rooms booked
-        try:
-            num_rooms = int(hotel.room_count)
-        except ValueError:
-            return Response({'error': 'Invalid room_count value.'}, status=status.HTTP_400_BAD_REQUEST)
+            # Release the number of rooms booked
+            try:
+                num_rooms = int(hotel.room_count)
+            except ValueError:
+                return Response({'error': 'Invalid room_count value.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Get any 'booked' rooms (or 'unavailable') and mark only that many as available
-        booked_rooms = Rooms.objects.filter(status__iexact='booked')[:num_rooms]
-        for room in booked_rooms:
-            room.status = 'available'
-            room.save()
-            print(f"Room {room.id} marked as available")
+            # Get any 'booked' rooms (or 'unavailable') and mark only that many as available
+            booked_rooms = Rooms.objects.filter(status__iexact='booked')[:num_rooms]
+            for room in booked_rooms:
+                room.status = 'available'
+                room.save()
+                print(f"Room {room.id} marked as available")
 
 
         # Ensure check_in is not greater than check_out and not the same time

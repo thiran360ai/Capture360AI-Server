@@ -273,16 +273,24 @@ def customer_login(request):
             # user.points += 200
             user.save()
 
-            # ✅ Get emblem URL based on membership
-            EMBLEM_URLS = {
-                'silver': 'https://postimg.cc/bsn3qPq7',
-                'gold': 'https://yourwebsite.com/images/gold.png',
-                'platinum': 'https://yourwebsite.com/images/platinum.png',
-            }
+            # # ✅ Get emblem URL based on membership
+            # EMBLEM_URLS = {
+            #     'silver': 'https://postimg.cc/bsn3qPq7',
+            #     'gold': 'https://yourwebsite.com/images/gold.png',
+            #     'platinum': 'https://yourwebsite.com/images/platinum.png',
+            # }
+            # emblem_url = EMBLEM_URLS.get(user.membership, '')
+
+            # # ✅ Check if Aadhar is present
+            # has_aadhar = bool(user.aadhar and hasattr(user.aadhar, 'url'))
+
+            # ✅ Emblem URLs
+            EMBLEM_URLS = UserDetails.EMBLEM_URLS
             emblem_url = EMBLEM_URLS.get(user.membership, '')
 
-            # ✅ Debugging prints
-            print(f"User: {user.name}, Membership: {user.membership}, Points: {user.points}, Emblem URL: {emblem_url}")
+            # ✅ Check if aadhar image exists
+            has_aadhar = bool(user.aadhar and hasattr(user.aadhar, 'url'))
+
 
             # ✅ Return the correct response
             response_data = {
@@ -290,9 +298,8 @@ def customer_login(request):
                 'success': True,
                 'user_id': user.id,
                 'username': user.name,
-                # 'membership': user.membership,
-                # 'emblem_url': emblem_url,
-                # 'points': user.points
+                'aadhar': has_aadhar,
+                'emblem_url': emblem_url
             }
 
             print(f"Response Data: {response_data}")  # Debug print
@@ -1370,3 +1377,53 @@ def delete_booking(request):
         return Response({'message': 'Booking deleted successfully.'}, status=status.HTTP_200_OK)
     except (HotelOrder.DoesNotExist, SpaOrder.DoesNotExist, GymOrder.DoesNotExist, SaloonOrder.DoesNotExist):
         return Response({'error': 'Booking not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+
+import subprocess
+import getpass
+import os
+
+def sync_db_from_remote():
+    # === CONFIGURATION ===
+    REMOTE_USER = "sadmin"
+    REMOTE_HOST = "192.168.1.100"
+    REMOTE_DB_NAME = "building"
+    REMOTE_DB_USER = "root"
+    REMOTE_DB_PASS = ""
+    REMOTE_DB_PORT = 3306
+
+    LOCAL_DB_NAME = "building"
+    LOCAL_DB_USER = "root"
+    LOCAL_DB_PASS = "2001"
+    LOCAL_DB_PORT =3306
+
+    DUMP_FILE = "db_dump.sql"
+
+    # === STEP 1: Dump Remote DB over SSH ===
+    print("📦 Dumping remote DB...")
+    dump_cmd = (
+        f'ssh {REMOTE_USER}@{REMOTE_HOST} "mysqldump -u{REMOTE_DB_USER} -p{REMOTE_DB_PASS} {REMOTE_DB_NAME}" > {DUMP_FILE}'
+    )
+    subprocess.run(dump_cmd, shell=True, check=True)
+    print("✅ Dumped remote DB to local file")
+
+    # === STEP 2: Import into Local DB ===
+    print("📥 Importing into local DB...")
+    load_cmd = (
+        f'mysql -u{LOCAL_DB_USER} -p{LOCAL_DB_PASS} {LOCAL_DB_NAME} < {DUMP_FILE}'
+    )
+    subprocess.run(load_cmd, shell=True, check=True)
+    print("✅ Loaded data into local DB")
+
+    # === STEP 3: Clean Up ===
+    os.remove(DUMP_FILE)
+    print("🧹 Cleaned up dump file")
+
+
+# ✅ Only run on demand, not at import
+def trigger_db_sync(request):
+    try:
+        sync_db_from_remote()
+        return JsonResponse({"status": "success"})
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": str(e)})

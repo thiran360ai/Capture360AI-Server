@@ -5,6 +5,7 @@ from rest_framework import status
 from django.contrib.auth.hashers import make_password
 from .models import Employee, Organization
 from .serializers import EmployeeSerializer
+from .serializers import *
 
 # USER CREATION FUNCTION (POST)
 @api_view(['POST'])
@@ -62,7 +63,9 @@ def login_view(request):
                 'email': user.email,
                 'role': user.role,
                 # 'organization': user.organization.name,
-                'device_id': user.device_id
+                'device_id': user.device_id,
+                'is_active': user.is_active
+                # 'employee_id': user.employee_id,
             }, status=status.HTTP_200_OK)
         else:
             return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
@@ -1422,3 +1425,175 @@ def create_device(request):
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# views.py
+
+from django.http import JsonResponse
+from django.views import View
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+import json
+
+
+
+# @method_decorator(csrf_exempt, name='dispatch')
+# class RegisterDeviceView(View):
+#     def post(self, request):
+#         try:
+#             data = json.loads(request.body)
+#             user_id = data.get('user_id')
+#             device_id = data.get('device_id')
+#             organization_id = data.get('organization_id')
+
+#             if not all([user_id, device_id, organization_id]):
+#                 return JsonResponse({"error": "user_id, device_id, and organization_id are required"}, status=400)
+
+#             # service = DeviceService(user_id, device_id, organization_id)
+#             user = Employee.objects.filter(id=user_id).first()
+#             if not user:
+#                 error = "User not found"
+#                 return False
+
+#             # Step 2: Check if device exists for this user
+#             device = Device.objects.filter(device_id=device_id, user=user).first()
+
+#             # Step 3: If not found, create it
+#             if not device:
+#                 device = Device.objects.create(
+#                     user=user,
+#                     device_id=device_id,
+#                     organization_id=organization_id or getattr(user, 'organization_id', None)
+#                 )
+
+#             return JsonResponse({
+#                 "message": "Device registered successfully",
+#                 "user_id": user.id,
+#                 "user_name": user.name,
+#                 "device_id": device.device_id,
+#                 "organization_id": device.organization_id
+#             }, status=200)
+
+#         except json.JSONDecodeError:
+#             return JsonResponse({"error": "Invalid JSON"}, status=400)
+#         except Exception as e:
+#             return JsonResponse({"error": str(e)}, status=500)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class RegisterDeviceView(View):
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+            user_id = data.get('user_id')
+            device_id = data.get('device_id')
+            organization_id = data.get('organization_id')
+
+            if not all([user_id, device_id, organization_id]):
+                return JsonResponse({"error": "user_id, device_id, and organization_id are required"}, status=400)
+
+            user = Employee.objects.filter(id=user_id).first()
+            if not user:
+                return JsonResponse({"error": "User not found"}, status=404)
+
+            organization = Organization.objects.filter(id=organization_id).first()
+            if not organization:
+                return JsonResponse({"error": "Organization not found"}, status=404)
+
+            device = Device.objects.filter(device_id=device_id, user=user).first()
+
+            if not device:
+                device = Device.objects.create(
+                    user=user,
+                    device_id=device_id
+                    # organization=organization
+                )
+
+            return JsonResponse({
+                "message": "Device registered successfully",
+                "user_id": user.id,
+                "user_name": user.name,
+                "device_id": device.device_id,
+                "organization_id": organization.id
+            }, status=200)
+
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON"}, status=400)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+
+@api_view(['POST'])
+def attendance_by_organization_key_and_date(request):
+    org_key = request.data.get('org_key')
+    start_date = request.data.get('start_date')
+    end_date = request.data.get('end_date')
+
+    if not org_key or not start_date or not end_date:
+        return Response({'error': 'org_key, start_date, and end_date are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        organization = Organization.objects.get(key=org_key)
+    except Organization.DoesNotExist:
+        return Response({'error': 'Organization not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    try:
+        start = datetime.strptime(start_date, '%Y-%m-%d').date()
+        end = datetime.strptime(end_date, '%Y-%m-%d').date()
+    except ValueError:
+        return Response({'error': 'Invalid date format. Use YYYY-MM-DD'}, status=status.HTTP_400_BAD_REQUEST)
+
+    employees = organization.employees.all()
+    attendances = Attendance.objects.filter(employee__in=employees, date__range=(start, end))
+
+    serializer = AttendanceSerializer(attendances, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+from django.db.models import Sum
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from datetime import datetime
+from .models import Attendance, Organization
+from .serializers import AttendanceSerializer
+
+@api_view(['POST'])
+def attendance_summary_by_org_and_date(request):
+    org_key = request.data.get('org_key')
+    start_date = request.data.get('start_date')
+    end_date = request.data.get('end_date')
+
+    if not org_key or not start_date or not end_date:
+        return Response({'error': 'org_key, start_date, and end_date are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        organization = Organization.objects.get(key=org_key)
+    except Organization.DoesNotExist:
+        return Response({'error': 'Organization not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    try:
+        start = datetime.strptime(start_date, '%Y-%m-%d').date()
+        end = datetime.strptime(end_date, '%Y-%m-%d').date()
+    except ValueError:
+        return Response({'error': 'Invalid date format. Use YYYY-MM-DD'}, status=status.HTTP_400_BAD_REQUEST)
+
+    employees = organization.employees.all()
+
+    summary_data = []
+
+    for employee in employees:
+        total = Attendance.objects.filter(
+            employee=employee,
+            date__range=(start, end)
+        ).aggregate(total_hours=Sum('total_hours'))
+
+        summary_data.append({
+            'employee_id': employee.employee_id,
+            
+            'employee_name': employee.name,
+            'employee_email': employee.email,
+            'total_hours': total['total_hours'] or 0
+        })
+
+    return Response(summary_data, status=status.HTTP_200_OK)

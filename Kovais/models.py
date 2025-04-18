@@ -59,6 +59,11 @@ class UserDetails(models.Model):
     premium_amount = models.CharField(max_length=255, null=True, blank=True)
     emblem_url = models.URLField(max_length=500, blank=True, null=True)
     points = models.IntegerField(default=0)  # New field for tracking points
+    phone_number = models.CharField(max_length=15,null=True,blank=True)
+    address = models.TextField(null=True,blank=True)
+    aadhar = models.ImageField(upload_to="Aadhar/", help_text="Upload aadhar image")
+
+
 
 
     def save(self, *args, **kwargs):

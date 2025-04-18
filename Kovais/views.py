@@ -749,7 +749,7 @@ def get_order_by_id_and_date(request):
 
     try:
         if emp_role.role == "hotel":
-            orders = HotelOrder.objects.annotate(created_date=TruncDate('created_at')).filter(employee_id=employee_id,
+            orders = HotelOrder.objects.annotate(created_date=TruncDate('check_out')).filter(employee_id=employee_id,
                                                                                               created_date=date_obj)
         elif emp_role.role == "spa":
             orders = SpaOrder.objects.annotate(created_date=TruncDate('created_at')).filter(employee_id=employee_id,
@@ -1380,50 +1380,88 @@ def delete_booking(request):
 
 
 import subprocess
-import getpass
 import os
+from django.http import JsonResponse
 
-def sync_db_from_remote():
-    # === CONFIGURATION ===
+# Path to mysql.exe for Windows
+MYSQL_PATH = r'"C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe"'
+
+def create_dump_file():
     REMOTE_USER = "sadmin"
     REMOTE_HOST = "192.168.1.100"
     REMOTE_DB_NAME = "building"
     REMOTE_DB_USER = "root"
     REMOTE_DB_PASS = ""
-    REMOTE_DB_PORT = 3306
+    DUMP_FILE = "dump.sql"
 
+    try:
+        print("📦 Creating remote DB dump file...")
+
+        if REMOTE_DB_PASS:
+            dump_cmd = (
+                f'ssh {REMOTE_USER}@{REMOTE_HOST} '
+                f'"mysqldump --protocol=TCP -h127.0.0.1 -P3306 -u{REMOTE_DB_USER} -p{REMOTE_DB_PASS} {REMOTE_DB_NAME}" > {DUMP_FILE}'
+            )
+        else:
+            dump_cmd = (
+                f'ssh {REMOTE_USER}@{REMOTE_HOST} '
+                f'"mysqldump --protocol=TCP -h127.0.0.1 -P3306 -u{REMOTE_DB_USER} -p {REMOTE_DB_NAME}" > {DUMP_FILE}'
+            )
+
+        subprocess.run(dump_cmd, shell=True, check=True)
+
+        if os.path.exists(DUMP_FILE):
+            print(f"✅ Dump created successfully as {DUMP_FILE}")
+            return {"status": "success", "message": f"Dump saved as {DUMP_FILE}"}
+        else:
+            raise FileNotFoundError("Dump file not created.")
+
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Error during dump: {e}")
+        return {"status": "error", "message": f"Dump failed: {str(e)}"}
+    except Exception as ex:
+        print(f"❌ Unexpected error: {ex}")
+        return {"status": "error", "message": str(ex)}
+
+
+def sync_db_from_remote():
     LOCAL_DB_NAME = "building"
     LOCAL_DB_USER = "root"
     LOCAL_DB_PASS = "2001"
-    LOCAL_DB_PORT =3306
+    DUMP_FILE = "dump.sql"
 
-    DUMP_FILE = "db_dump.sql"
+    try:
+        print("📥 Importing into local DB...")
 
-    # === STEP 1: Dump Remote DB over SSH ===
-    print("📦 Dumping remote DB...")
-    dump_cmd = (
-        f'ssh {REMOTE_USER}@{REMOTE_HOST} "mysqldump -u{REMOTE_DB_USER} -p{REMOTE_DB_PASS} {REMOTE_DB_NAME}" > {DUMP_FILE}'
-    )
-    subprocess.run(dump_cmd, shell=True, check=True)
-    print("✅ Dumped remote DB to local file")
+        load_cmd = (
+            f'{MYSQL_PATH} -u{LOCAL_DB_USER} -p{LOCAL_DB_PASS} {LOCAL_DB_NAME} < {DUMP_FILE}'
+        )
 
-    # === STEP 2: Import into Local DB ===
-    print("📥 Importing into local DB...")
-    load_cmd = (
-        f'mysql -u{LOCAL_DB_USER} -p{LOCAL_DB_PASS} {LOCAL_DB_NAME} < {DUMP_FILE}'
-    )
-    subprocess.run(load_cmd, shell=True, check=True)
-    print("✅ Loaded data into local DB")
+        subprocess.run(load_cmd, shell=True, check=True)
+        print("✅ Loaded data into local DB")
 
-    # === STEP 3: Clean Up ===
-    os.remove(DUMP_FILE)
-    print("🧹 Cleaned up dump file")
+        os.remove(DUMP_FILE)
+        print("🧹 Cleaned up dump file")
+        return {"status": "success", "message": "Database imported successfully"}
+
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Error during import: {e}")
+        return {"status": "error", "message": f"Import failed: {str(e)}"}
+    except Exception as ex:
+        print(f"❌ Unexpected error: {ex}")
+        return {"status": "error", "message": str(ex)}
 
 
-# ✅ Only run on demand, not at import
+# ✅ Django view to trigger it
 def trigger_db_sync(request):
     try:
-        sync_db_from_remote()
-        return JsonResponse({"status": "success"})
+        dump_result = create_dump_file()
+        if dump_result["status"] == "error":
+            return JsonResponse(dump_result)
+
+        import_result = sync_db_from_remote()
+        return JsonResponse(import_result)
+
     except Exception as e:
         return JsonResponse({"status": "error", "message": str(e)})
+

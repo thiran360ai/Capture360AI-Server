@@ -31,6 +31,7 @@ urlpatterns = [
     path('bike/',include('bike.urls')),
     path('property/',include('app.urls')),
     path('ecomapp/',include('ecomapp.urls')),
+    path('hotel/',include('HotelApp.urls')),
 
 ]
 if settings.DEBUG:

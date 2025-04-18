@@ -299,7 +299,8 @@ def customer_login(request):
                 'user_id': user.id,
                 'username': user.name,
                 'aadhar': has_aadhar,
-                'emblem_url': emblem_url
+                'emblem_url': emblem_url,
+                'points':user.points
             }
 
             print(f"Response Data: {response_data}")  # Debug print

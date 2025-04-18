@@ -51,3 +51,22 @@ class AttendanceAdmin(admin.ModelAdmin):
 @admin.register(Rooms)
 class RoomsAdmin(admin.ModelAdmin):
     list_display= ['id', 'room', 'status']
+    
+    
+from django.contrib import admin
+from .models import Products, Order
+
+@admin.register(Products)
+class ProductsAdmin(admin.ModelAdmin):
+    list_display = ['id', 'name', 'products', 'price', 'quantity']
+    list_filter = ['products']
+    search_fields = ['name', 'products']
+    ordering = ['id']
+
+
+@admin.register(Order)
+class OrderAdmin(admin.ModelAdmin):
+    list_display = ['id', 'customer', 'employee', 'product', 'quantity', 'total_amount', 'payment_status', 'status', 'created_at']
+    list_filter = ['payment_status', 'status']
+    search_fields = ['customer', 'employee__name', 'product__name']
+    ordering = ['-created_at']

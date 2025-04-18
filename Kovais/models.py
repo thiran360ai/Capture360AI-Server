@@ -201,3 +201,61 @@ class Review(models.Model):
 
     def __str__(self):
         return f"Review {self.id} - Rating: {self.rating}"
+
+
+class Products(models.Model):
+    MEMBERSHIP_CHOICES = (
+        ('salon', 'Salon'),
+        ('gym', 'Gym'),
+        ('spa', 'Spa'),
+    )
+
+    products = models.CharField(max_length=20, choices=MEMBERSHIP_CHOICES, default='salon', null=True, blank=True)
+    name = models.CharField(max_length=256, null=True, blank=True)
+    price = models.CharField(max_length=256, null=True, blank=True)
+    quantity = models.PositiveIntegerField(default=0)
+
+    image = models.ImageField(upload_to='product_images/', null=True, blank=True) 
+
+    def __str__(self):
+        return f"{self.name} ({self.products})"
+
+
+class Order(models.Model):
+    PAYMENT_STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('paid', 'Paid'),
+        ('failed', 'Failed'),
+    )
+
+    ORDER_STATUS_CHOICES = (
+        ('placed', 'Placed'),
+        ('processing', 'Processing'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
+    )
+
+    customer = models.CharField(max_length=256, null=True, blank=True)
+    employee = models.ForeignKey(Employee, on_delete=models.SET_NULL, null=True, blank=True, related_name='employee_orders')
+    product = models.ForeignKey(Products, on_delete=models.CASCADE, related_name='product_orders')
+
+    quantity = models.PositiveIntegerField(default=1)
+    total_amount = models.FloatField(default=0.0)
+
+    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='pending')
+    status = models.CharField(max_length=20, choices=ORDER_STATUS_CHOICES, default='placed')
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def calculate_total(self):
+        try:
+            return float(self.product.price) * self.quantity
+        except:
+            return 0.0
+
+    def save(self, *args, **kwargs):
+        self.total_amount = self.calculate_total()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Order #{self.id} by {self.customer.email} - {self.product.name}"
